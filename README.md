@@ -1,43 +1,61 @@
-# vyen cli
+# Vyen CLI
 
-CLI coding agent độc lập, ưu tiên Termux và Windows/Linux/macOS, dùng API của bạn.
-Tham khảo kiến trúc OpenAI Codex, ZCode và DeepSeek Harness; **không fork base và không dùng runtime của các dự án đó**.
+Vyen CLI là một agent lập trình dòng lệnh (CLI coding agent) độc lập, siêu nhẹ và bảo mật cao, được thiết kế tối ưu cho lập trình viên trên Termux (Android) cũng như các môi trường Linux, macOS và Windows sử dụng API riêng của bạn (BYOK).
 
-> Lộ trình phát triển và các quyết định kiến trúc: [docs/ROADMAP.md](docs/ROADMAP.md).
+> Lộ trình phát triển và các quyết định kiến trúc: [docs/ROADMAP.md](docs/ROADMAP.md). Chi tiết lịch sử phiên bản xem tại [CHANGELOG.md](CHANGELOG.md).
 
-## Cài đặt (Termux / Linux / macOS / Windows)
+---
 
-Cài bản phát hành mới nhất từ npm:
+## Tính năng nổi bật
+
+- **TUI tối giản & Transcript toàn màn hình**: Hiển thị Markdown thời gian thực, bảng căn cột, unified diff màu sắc nét; bật/tắt Transcript mode (`Ctrl+T`) xem toàn bộ quá trình suy luận; hàng đợi lệnh chạy ngay khi agent đang bận.
+- **Hỗ trợ đa nhà cung cấp (BYOK)**: Tương thích mượt mà với OpenAI-compatible, OpenAI Responses và Anthropic Messages; tự động quét danh sách model từ endpoint và bảo toàn nguyên vẹn `reasoning_content` (DeepSeek, GLM, Kimi).
+- **Phân tầng quyền hạn & Workspace Trust**: Kiểm soát chi tiết qua `.vyen/settings.json` với chính sách `permissions.allow`, `permissions.ask`, `permissions.deny`. Cờ `--trust-workspace` kích hoạt cả `hooks` lẫn quy tắc `permissions.allow`, đồng thời xác thực mã băm SHA-256 cho toàn bộ script được tham chiếu.
+- **Hệ thống Hook vòng đời (Lifecycle Hooks)**: 8 sự kiện chuẩn (`SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, v.v.) lấy cảm hứng từ Claude Code, cơ chế fail-closed chặn thực thi tool khi có lỗi hoặc mã thoát 2.
+- **Bộ công cụ tích hợp toàn diện**: Thao tác file an toàn, bảo vệ chống lỗi thiết bị `nul` trên Windows, tìm kiếm nội bộ không rò rỉ context, cùng bộ công cụ Web (`web_fetch`, `web_search`) tích hợp sẵn cơ chế chống SSRF và DNS rebinding.
+- **Subagents & Tự động hóa thông minh**: Khởi chạy agent con chạy nền (`spawn_agent`/`wait_agent`), ủy thác theo lô (`delegate_task`, `delegate_edit`), pipeline đa bước Custom Workflows (`.vyen/workflows/`), và hội đồng phản biện Agent Network.
+- **Hệ sinh thái MCP 2 chiều**: Hỗ trợ chuẩn Model Context Protocol qua stdio và HTTP Streamable, quản lý server theo dự án qua `.vyen/mcp.json`, tương tác Elicitation, Bounded Sampling và bộ nhớ đồ thị Knowledge Graph.
+- **Hoàn tác & Checkpoint tức thì**: Rollback an toàn 100% qua `/rewind`, `/revert`, `/undo` mà không bao giờ ghi đè lên các thay đổi thủ công người dùng tạo ra sau lượt chạy.
+- **Điều khiển từ xa qua Mobile Pair**: Mở Cloudflared Quick Tunnel miễn phí (`/pair`), tạo mã QR ngay trên terminal để điều khiển phiên và duyệt quyền trực tiếp từ điện thoại.
+
+---
+
+## Yêu cầu hệ thống
+
+| Thành phần | Yêu cầu tối thiểu | Chi tiết & Khuyến nghị |
+|---|---|---|
+| **Hệ điều hành** | Termux (Android), Linux, macOS, Windows | Trên Termux, chạy trong thư mục `$HOME` để đảm bảo quyền thực thi file |
+| **Node.js** | `>= 22.16.0` | Khuyên dùng Node 22.16 LTS hoặc Node 24 (không cần native compiler/proot) |
+| **Trình quản lý gói** | `npm` (hoặc `pnpm`, `yarn`, `bun`) | Bản npm chứa JS biên dịch sẵn, tự động nạp dependencies khi cài đặt |
+| **Công cụ hệ thống** | `git`, `bash` | Khuyến nghị cài `ripgrep` (có search JavaScript nội bộ dự phòng nếu thiếu) |
+| **API Endpoint** | OpenAI / Anthropic Compatible | Endpoint hỗ trợ tool calling; nếu không cấu hình sẽ dùng gateway mặc định `https://api.yuristore.xyz/v1` |
+
+---
+
+## Cài đặt & Bắt đầu nhanh
+
+### 1. Cài đặt toàn cục từ npm
 
 ```bash
 # Trên Termux (cài thêm công cụ hệ thống nếu chưa có):
 pkg install nodejs-lts git bash ripgrep
 
-node --version
+# Cài đặt Vyen CLI:
 npm install -g @nguyenhuumanh/vyen
+
+# Kiểm tra cài đặt:
 vyen --version
 ```
 
-Cần Node **22.16 trở lên**; Node 24 cũng được. Bản npm đã chứa JS biên dịch sẵn;
-không cần compiler, pnpm, proot, glibc hay addon native. Thiếu `ripgrep` vẫn có
-search JavaScript dự phòng giới hạn kích thước.
+### 2. Thiết lập nhanh (`vyen setup` hoặc `vyen init`)
 
-Runtime dependencies được tải từ npm khi cài; gói này không kèm `node_modules`.
-Trên Termux, hãy làm việc trong `$HOME` để có đầy đủ quyền file và executable bit.
-
-## Thiết lập nhanh (`vyen setup` hoặc `vyen init`)
-
-Chạy wizard tương tác để chọn provider, nhập Base URL, lưu API key an toàn
-(`credentials.json` quyền `0600`), tự động quét danh sách model từ `/models` của endpoint
-(không hardcode model) và chọn mức `effort` (nhấn `Esc` bất kỳ lúc nào để huỷ không lưu dở):
+Chạy wizard tương tác để chọn provider, nhập Base URL, quét danh sách model từ endpoint và lưu API key an toàn vào `credentials.json` (quyền `0600`):
 
 ```bash
 vyen setup
-# hoặc trong TUI gõ:
-/setup
 ```
 
-Hoặc cấu hình bằng lệnh `vyen init` truyền thống:
+Hoặc cấu hình nhanh qua lệnh:
 
 ```bash
 vyen init \
@@ -46,353 +64,48 @@ vyen init \
   --model 'YOUR_MODEL_ID' \
   --effort xhigh
 
-# Nhập key ẩn qua biến môi trường (hoặc lưu qua vyen setup / /key):
+# Nhập key ẩn qua biến môi trường:
 read -rsp 'API key: ' VYEN_API_KEY; echo
 export VYEN_API_KEY
-
-cd "$HOME/your-project"
-vyen doctor
-vyen
 ```
 
-| Provider | `--provider` | Base URL |
-|---|---|---|
-| Dịch vụ OpenAI-compatible | `openai-compatible` | API root trước `/chat/completions`, thường kết thúc `/v1` |
-| OpenAI Responses-compatible | `openai-responses` | API root trước `/responses` |
-| Anthropic Messages-compatible | `anthropic` | API root trước `/messages`, thường kết thúc `/v1` |
+### 3. Khởi chạy dự án
 
-Vyen giữ nguyên đường dẫn Base URL bạn cấu hình (chỉ tự động chuẩn hoá thêm `/v1` cho một số gateway quen thuộc như `api.yuristore.xyz` hoặc `localhost:8000` khi bỏ trống path). Nếu không đặt `baseUrl`, mặc định sẽ dùng `DEFAULT_GATEWAY_URL` (`https://api.yuristore.xyz/v1`). Endpoint phải hỗ trợ tool calling.
+```bash
+cd your-project
+vyen doctor     # Kiểm tra kết nối và môi trường
+vyen            # Mở giao diện TUI làm việc
+```
 
-> **Lưu ý bảo mật:** khi không đặt `baseUrl`, prompt và API key được gửi tới `https://api.yuristore.xyz/v1`, một dịch vụ bên thứ ba. Hãy đặt `baseUrl` (flag `--base-url` hoặc config) nếu bạn không muốn dữ liệu đi qua gateway mặc định. Vyen in cảnh báo một lần trước request mô hình đầu tiên khi dùng gateway mặc định; wizard setup cũng cảnh báo trước khi dò `/models` nếu lần thiết lập đầu tiên vẫn chọn gateway mặc định. Ở chế độ `vyen doctor --json`, trường `baseUrl` vẫn giữ giá trị cấu hình (hoặc `"provider default"`), kèm `effectiveBaseUrl` (đích thực tế sau chuẩn hoá) và `defaultGateway` để script/CI kiểm tra nơi dữ liệu sẽ đi.
+---
 
-## Cách dùng CLI
+## Cách dùng CLI cơ bản
 
 ```bash
 vyen                                              # Mở giao diện TUI toàn màn hình
-vyen resume                                       # Chọn phiên để tiếp tục (thư mục này / mọi dự án), chạy từ bất kỳ đâu
-vyen --resume latest                              # Tương đương vyen resume
-vyen --resume SESSION_UUID -p 'Tiếp tục phần đang làm'
-vyen -p 'Đọc repo, tìm nguyên nhân lỗi và sửa; chạy kiểm tra phù hợp'
-vyen --effort max -p 'Phân tích sâu và tối ưu hiệu năng'
-vyen --read-only -p 'Đọc và giải thích kiến trúc repo'
-vyen --yes -p 'Tự động duyệt mọi thao tác ghi file và bash'
-vyen --output-format stream-json -p 'Kiểm tra dự án' # xuất luồng NDJSON chuẩn v1 (--json là alias)
-vyen -p 'Trích xuất cấu trúc' --json --json-schema schema.json # đầu ra có cấu trúc; structuredOutput nằm trong event done
-vyen --json -p 'Kiểm tra dự án'
-printf '%s' 'Giải thích các file chính' | vyen --read-only
-git diff | vyen -p 'Review diff này'              # dữ liệu pipe vào stdin được đính kèm làm ngữ cảnh
-vyen -p 'Giải thích lỗi' < build.log               # tương tự với file chuyển hướng
-vyen -p 'Viết changelog' -o CHANGELOG.draft.md     # ghi câu trả lời cuối ra file (scripting/CI)
-vyen sessions
-vyen upgrade                        # Cập nhật lên bản mới nhất (tự dò npm/pnpm/yarn/bun)
-vyen upgrade 0.3.1                  # Ghim một phiên bản
-vyen upgrade --dry-run              # Chỉ in lệnh cài, không chạy
+vyen resume                                       # Chọn phiên để tiếp tục (hỗ trợ chuyển workspace tự động)
+vyen -p 'Đọc repo, tìm nguyên nhân lỗi và sửa'     # Chạy headless với prompt trực tiếp
+vyen --effort max -p 'Phân tích sâu kiến trúc'     # Tăng mức độ suy luận tối đa
+vyen --read-only -p 'Giải thích các module chính'  # Chế độ chỉ đọc (không sửa file hay chạy shell)
+vyen --yes -p 'Tự động duyệt mọi thao tác'        # Tự động chấp thuận (auto-approve)
+vyen --output-format stream-json -p 'Audit repo'  # Xuất luồng NDJSON chuẩn v1 (--json là alias)
+vyen upgrade                                      # Tự động cập nhật bản mới nhất (hỗ trợ npm/pnpm/yarn/bun)
 ```
 
-Mặc định ở chế độ `ask` (yêu cầu chấp thuận khi sửa/ghi file hoặc chạy shell).
-Không có TTY thì những yêu cầu này bị từ chối trừ khi truyền `--yes` (tương đương
-chế độ `auto`). `--read-only` loại bỏ các công cụ ghi/sửa/bash khỏi bộ tool.
-Cấu hình phân tầng `.vyen/settings.json` cho phép đặt quy tắc `permissions.allow`,
-`permissions.ask`, `permissions.deny` cùng các `hooks` vòng đời (`PreToolUse`, `PostToolUse`, `UserPromptSubmit`, v.v.). Cờ `--allowed-tools` và `--disallowed-tools`
-cho phép ghi đè nhanh từ dòng lệnh; quy tắc `deny` luôn chặn ngay cả trong chế độ `auto`.
-Hook command nhận payload JSON qua stdin và có môi trường làm sạch (không lộ API key); mã thoát 2 chặn tool call, mã thoát 0 inject context. Trong `.vyen/settings.json`, cả `hooks` lẫn quy tắc `permissions.allow` đều yêu cầu xác thực Workspace Trust (kích hoạt bằng cờ `--trust-workspace`). Mã băm SHA-256 bao phủ cả tệp settings lẫn các tệp script được tham chiếu trong `permissions.allow`.
-Mã thoát: `0` thành công, `1` lỗi, `2` từ chối quyền, `130` Ctrl+C, `143` SIGTERM.
-
-## Cập nhật phiên bản
-
-`vyen upgrade` tự dò cách bạn đã cài vyen (`npm`, `pnpm`, `yarn` hoặc `bun`),
-lấy bản mới nhất từ npm rồi chạy đúng lệnh cài toàn cục của trình quản lý đó:
-
-```bash
-vyen upgrade                  # lên bản mới nhất
-vyen upgrade 0.3.1            # ghim một phiên bản cụ thể
-vyen upgrade --method pnpm    # ép trình quản lý khi dò sai
-vyen upgrade --dry-run        # chỉ in lệnh, không cài
-```
-
-Khi mở TUI, vyen đọc cache kiểm tra phiên bản
-(`$XDG_DATA_HOME/vyen/update-check.json`, làm mới mỗi 24 giờ) và in một dòng
-nhắc nếu có bản mới. Chế độ `-p` và `--json` không kiểm tra. Đặt
-`"update": "disable"` trong config hoặc `VYEN_UPDATE=disable` để tắt hẳn;
-`"auto"` tự cài khi cache đã biết bản mới (lần chạy kế tiếp mới dùng code mới).
-Mặc định là `"notify"` — chỉ nhắc, không tự sửa cài đặt.
-
-## Giao diện TUI, Phím tắt & Slash Commands
-
-Khi chạy `vyen` trong terminal, giao diện TUI toàn màn hình tối giản: không khung viền, không
-nền tô màu, dùng màu mặc định của terminal (đẹp trên cả theme sáng lẫn tối).
-
-```
-› Sửa test checkout đang fail
-
-○ Explored
-  └ Read src/cart.ts
-● Ran npm test -- cart (2s)
-± Edited src/cart.ts (+1 -1)
-◆ Tổng tiền tính bằng số thực mà không làm tròn…
-
-⠋ Working  4s   esc to interrupt
-──────────────────────────────────────────────────────────────
-› Ask anything   / commands   @ files   $ skills   ! shell
-ask   glm-5.3-flash   effort max        shop-api (main)   ctx 34%   69k tokens
-```
-
-- **Hội thoại**: Markdown, bảng căn cột, diff màu (`+` xanh, `-` đỏ), khối code có lề mờ, trạng thái tool/subagent theo thời gian thực.
-- **Dòng nhập**: một đường kẻ (chuyển màu hổ phách khi vyen đang chờ bạn trả lời/duyệt quyền), dòng nhập `›` và popup gợi ý `/slash` kèm mô tả.
-- **Dòng trạng thái**: chế độ (`auto-approve` hiện màu hổ phách vì là chế độ rủi ro), model, effort, workspace (nhánh git), todo, % ngữ cảnh do provider báo và tổng token.
-
-### Phím tắt chính
-
-| Phím tắt | Chức năng |
-|---|---|
-| `Ctrl+T` | Bật/tắt **Transcript Mode** toàn màn hình — hiển thị đầy đủ cả khối suy luận (`Thinking`), cuộn xem toàn bộ lịch sử; nhấn `Ctrl+T`, `Esc` hoặc `q` để quay lại ngay |
-| `Shift+Tab` | Chuyển nhanh chế độ quyền: `ask` → `auto` (auto-approve) → `plan` → `readonly` |
-| `Alt+.` / `Alt+,` | Tăng / giảm mức suy luận (`effort`: `low` ↔ `medium` ↔ `high` ↔ `xhigh` ↔ `max`) |
-| `Esc Esc` (nhấn đúp) | Mở bảng **Rewind / Revert** về checkpoint của các lượt trước và khôi phục file |
-| `Up` / `Down` / `Tab` | Di chuyển chọn lệnh trong popup `/slash` (hoặc gọi lại lịch sử lệnh khi không mở popup) |
-| `PgUp` / `PgDn` / Lăn chuột | Cuộn khung hội thoại hoặc khung Transcript |
-| `Ctrl+C` | Huỷ lượt model/tool đang chạy |
-| `Ctrl+D` | Thoát khi ô nhập trống |
-
-### Thực thi lệnh ngay khi Agent đang chạy (`Running`)
-
-Khi model đang suy nghĩ hoặc chạy tool:
-- Gõ các lệnh điều khiển như `/auto`, `/yolo`, `/view`, `/mode`, `/effort`, `/model`,
-  `/status`, `/help`, `/tools`, `/diff`, `/git`, `/todo`, `/plan`, `/copy`, `!<lệnh shell>`
-  sẽ **chạy và áp dụng ngay lập tức** mà không cần chờ xong lượt.
-- Gõ tin nhắn prompt bình thường khi máy đang bận sẽ được đưa vào hàng đợi (`queuedPrompts`)
-  để tự động chạy ngay khi lượt hiện tại kết thúc.
-
-### Danh sách Slash Commands tiêu biểu
-
-- `/auto` (hoặc `/yolo [on|off]`): Bật/tắt chế độ **Auto-Approve** (tự động chấp thuận mọi thao tác sửa file, bash và subagent).
-- `/mode [ask|auto|plan|readonly]`: Xem hoặc đổi chế độ quyền thực thi.
-- `/view [normal|verbose]`: Đổi chế độ hiển thị suy nghĩ (`normal` ẩn khối `Thinking` cho gọn; `verbose` hiện đầy đủ toàn bộ quá trình suy luận).
-- `/transcript`: Bật/tắt chế độ xem Transcript toàn màn hình (giống `Ctrl+T`).
-- `/model [tên_model]` & `/models`: Đổi model hoặc quét trực tiếp danh sách model từ API.
-- `/effort [low|medium|high|xhigh|max|clear]`: Chỉnh mức độ suy luận (`reasoning_effort` / thinking budget).
-- `/resume [latest|số_thứ_tự|id_prefix]`: Mở bảng chọn phiên với 2 tab **This folder** / **All projects** (`←`/`→` hoặc `Tab` để đổi tab, `↑`/`↓` chọn, gõ để lọc theo nội dung, tên thư mục hoặc model, `Enter` để resume). Chọn phiên của dự án khác sẽ tự chuyển workspace sang thư mục đó, nên không cần nhớ phiên nằm ở thư mục nào. `vyen resume` (hoặc `vyen --resume ID`) cũng chạy được từ bất kỳ thư mục nào.
-- `/new`, `/clear`, `/fork [tên]`, `/rename <tiêu_đề>`: Tạo phiên mới, xoá màn hình, nhân bản nhánh hội thoại hoặc đặt tên phiên.
-- `/rewind [N]` & `/revert [N] [both|code|messages]`: Quay lui hội thoại và/hoặc khôi phục trạng thái file về trước lượt thứ `N`.
-- `/undo`: Hoàn tác các thay đổi file của lượt vừa chạy.
-- `/btw <câu_hỏi>`: Hỏi nhanh câu hỏi phụ (ephemeral side question) dựa trên ngữ cảnh hiện tại mà không làm bẩn lịch sử phiên.
-- `/goal [set|done|clear]`, `/memory [list|add|remove|clear]`, `/recap`: Đặt mục tiêu phiên, lưu ghi nhớ dài hạn (`memories.json`) hoặc tóm tắt tiến độ.
-- `/init`, `/skills`, `/mention <path>`: Khởi tạo `AGENTS.md`, liệt kê `SKILL.md` (gọi qua `$skill-name`) hoặc đính kèm `@file`/ảnh.
-- `/pair [start|stop|status|lan]`: Mở **Cloudflared Quick Tunnel** miễn phí (`*.trycloudflare.com`), tạo mã QR ngay trên terminal + link bảo mật để quét bằng điện thoại và điều khiển phiên `vyen` từ xa (chat, xem stream, đổi chế độ, duyệt/từ chối quyền tool). Nếu chưa có `cloudflared`, vyen hỏi trước khi tải bản chính thức từ GitHub.
-- `/workflow [list|show|create|rm|run <tên> [tham_số]]`: Quản lý và thực thi các pipeline đa bước tuỳ chỉnh (`.json` hoặc `.md` trong `.vyen/workflows/`) hoặc workflow tích hợp sẵn (`feature-dev`, `bug-hunt`, `tdd-cycle`, `security-audit`).
-- `/network [<chủ_đề>|board|send|clear]` (hoặc `/brainstorm`, `/council`): Triệu tập **Agent Network** (nhiều vai trò `Architect`, `Researcher`, `Critic`, `Pragmatist`, `Security` thảo luận, phản biện qua lại nhiều vòng để lên ý tưởng và chốt phương án) hoặc kiểm tra **P2P Message Bus** giữa các subagents.
-- `/diff`, `/git`, `/review`: Xem `git status` + `git diff`, hoặc yêu cầu model review toàn bộ thay đổi hiện tại.
-- `/compact [trọng_tâm]`: Chủ động nén ngữ cảnh hội thoại (có lưu archive đầy đủ trước khi nén).
-- `/setup` (hoặc `/provider`), `/key`, `/doctor`: Cấu hình lại provider (nhấn `Esc` để huỷ), đổi API key (nhập ẩn) hoặc kiểm tra kết nối/môi trường.
-- `/prompts`, `/prompts:<tên> [tham số]`: Liệt kê và chạy prompt tuỳ biến từ file Markdown (xem mục *Prompt tuỳ biến*).
-- `!<lệnh>`: Chạy nhanh lệnh shell trực tiếp ngay trong TUI (ví dụ `!git status`).
-
-### Duyệt quyền nhanh cho lệnh shell
-
-Khi được hỏi `Allow bash?`, ngoài `y` (một lần) và `a` (mọi lệnh bash trong phiên), có thể chọn
-`p` để **chỉ cho phép tiền tố lệnh đó** trong phiên, ví dụ `npm test`, `npm run lint`,
-`python -m pytest`, `git status`. Lệnh ghép hoặc lệnh bọc (`;`, `&&`, `|`, `` ` ``, `$()`, `>`, `env`,
-`sudo`, `bash -c`, gán biến `FOO=1 ...`) không bao giờ được duyệt theo tiền tố, nên
-`npm test; curl ... | sh` vẫn phải hỏi lại. Lệnh cài gói (`npm install x`, `pip install x`…),
-lệnh sửa/xoá file (`rm`, `mv`, `cp`, `chmod`…) và lệnh mạng (`curl`, `wget`…) chỉ được nhớ đúng
-nguyên câu lệnh. Tham số thêm vào sau tiền tố đã duyệt mà trỏ ra ngoài workspace (`/…`, `~`, `..`)
-hoặc bật chế độ ghi/chạy chương trình (`--output`, `--ext-diff`, `-c`, `--exec`…) vẫn phải hỏi lại.
-
-Khi cần chú ý (prompt duyệt quyền, lượt chạy dài ≥ 15 giây vừa xong), vyen phát tiếng chuông
-terminal (`BEL`). Tắt bằng `VYEN_NOTIFY=0`.
-
-### Prompt tuỳ biến (custom slash commands)
-
-Tạo file Markdown trong `.vyen/prompts/` hoặc `.agents/prompts/` (theo dự án),
-`~/.config/vyen/prompts/` hoặc `~/.codex/prompts/` (theo người dùng):
-
-```markdown
 ---
-description: Review một file theo checklist của team
+
+## Lưu ý bảo mật
+
+- **Gateway mặc định:** Khi không đặt `baseUrl`, prompt và API key được gửi tới `https://api.yuristore.xyz/v1`, một dịch vụ bên thứ ba. Hãy đặt `baseUrl` (flag `--base-url` hoặc config) nếu bạn không muốn dữ liệu đi qua gateway mặc định. Vyen in cảnh báo một lần trước request mô hình đầu tiên khi dùng gateway mặc định; wizard setup cũng cảnh báo trước khi dò `/models` nếu lần thiết lập đầu tiên vẫn chọn gateway mặc định. Ở chế độ `vyen doctor --json`, trường `baseUrl` vẫn giữ giá trị cấu hình (hoặc `"provider default"`), kèm `effectiveBaseUrl` (đích thực tế sau chuẩn hoá) và `defaultGateway` để script/CI kiểm tra nơi dữ liệu sẽ đi.
+- **Cách ly API Key:** API key của vyen (`VYEN_API_KEY` và `keyEnv`) hoàn toàn bị loại khỏi môi trường thực thi của mọi tiến trình con (`bash`, `!cmd`, `git`, `rg`), chống rò rỉ qua prompt injection.
+- **An toàn Workspace:** Lệnh đọc ảnh (`view_image`, `@ảnh`) ngoài workspace cần người dùng phê duyệt rõ ràng. Approval không phải sandbox của hệ điều hành; lệnh shell được duyệt sẽ chạy với quyền của user hiện tại.
+
 ---
-Review $1 theo checklist bảo mật và hiệu năng. Ghi chú thêm: $ARGUMENTS
-```
-
-Chạy bằng `/prompts:review src/app.ts kiểm tra SQL injection`. `$ARGUMENTS` là toàn bộ phần sau
-tên lệnh, `$1`…`$9` là từng từ, `$$` là ký tự `$`.
-
-## Harness, Công cụ & Hoàn tác (Checkpoint / Rewind)
-
-- **Bộ công cụ tích hợp đầy đủ**:
-  - **File & Shell**: `read_file`, `list_files`, `search`, `write_file`, `edit_file`, `apply_patch`, `bash`, `view_image`.
-  - **Web Tools**: `web_fetch` (đọc nội dung web sang Markdown/Text/HTML có phòng thủ SSRF, chống DNS rebinding, kiểm tra redirect và giới hạn 5MB) và `web_search` (tìm kiếm thông tin thời gian thực không cần API key với cơ chế dự phòng 3 lớp: DuckDuckGo Lite, TinyFish Keyless và Parallel Keyless).
-  - **Kế hoạch & Tương tác**: `todo_read`, `todo_write`, `update_plan`, `request_user_input`, `exit_plan_mode`.
-  - **Subagents (7 công cụ)**: Vòng đời tương tác (`spawn_agent`, `wait_agent`, `send_input`, `close_agent`, `list_agents`) và uỷ thác theo lô (`delegate_task`, `delegate_edit`).
-  - **MCP Resources & Tools**: `list_mcp_resources`, `list_mcp_resource_templates`, `read_mcp_resource` cùng các tool động từ MCP server (`mcp__<server>__<tool>`).
-- **Cơ chế Checkpoint & Rollback nhẹ, chính xác (`/rewind`, `/revert`, `/undo`)**:
-  - Chỉ các file được sửa trực tiếp qua bộ công cụ chỉnh sửa (`write_file`, `edit_file`, `apply_patch` — bao gồm cả subagent worker được uỷ quyền sửa file) mới được ghi nhận bản sao lưu trước lượt chạy (trạng thái tồn tại, nội dung gốc và file mode) để rollback tức thì 100% và không tốn I/O quét toàn bộ workspace khi chạy lệnh shell (`bash`).
-  - File bạn đã sửa tay **sau** lượt của agent sẽ không bị ghi đè khi revert: vyen giữ nguyên và báo xung đột; dùng `/revert N --force` nếu thật sự muốn ghi đè.
-  - Tổng dung lượng bản sao lưu mỗi phiên giới hạn 32 MiB (các lượt cũ nhất bị lược nội dung trước và được báo rõ khi revert), để file phiên không phình to vô hạn.
-- **`apply_patch` đầy đủ định dạng Codex**: hỗ trợ `*** Move to:` (đổi tên/di chuyển), nhiều khối `Update File` cho cùng một file, file thêm mới luôn kết thúc bằng newline; patch chỉ được ghi khi **mọi** hunk đều khớp.
-- **Tự động Retry API**: Khi gặp lỗi mạng hoặc lỗi upstream tạm thời (HTTP `5xx`, `429`, `408`, lỗi đóng stream/socket bất ngờ), Harness tự động thử lại tối đa **3 lần** với exponential backoff + jitter, tôn trọng header `Retry-After` (tối đa 20 giây) trước khi dừng.
-- **Đọc song song**: tối đa 6 lời gọi tool chỉ-đọc liên tiếp (`read_file`, `search`, `list_files`, `web_fetch`, `web_search`, MCP read-only…) chạy đồng thời; thao tác ghi và shell vẫn tuần tự theo đúng thứ tự model yêu cầu.
-- **Hiển thị đầy đủ Unified Diff**: `computeUnifiedDiff` hiển thị trọn vẹn số dòng thêm/xoá thực tế (`+N -M`, hỗ trợ tới 5.000 dòng mỗi hunk).
-- **Bảo vệ chống lỗi file `nul` trên Windows**:
-  - Tự động chuyển hướng `>nul`, `2>nul`, `>>NUL`, `>/dev/nul` trong lệnh `bash` trên Windows về `/dev/null` an toàn (`sanitizeBashCommand`).
-  - `WorkspaceFiles` từ chối tạo các tên thiết bị dành riêng của Windows (`nul`, `con`, `prn`, `aux`, `com1-9`, `lpt1-9`) trên mọi nền tảng để giữ an toàn cho Git repo đa nền tảng.
-  - `unlinkSafe` hỗ trợ xoá cả các file tên thiết bị bị tạo nhầm trước đó thông qua đường dẫn mở rộng `\\?\`.
-- **An toàn phiên & file**:
-  - Lưu phiên atomic, lock tiến trình, tự động dọn phiên rỗng (`0 messages`) khi thoát hoặc đổi phiên.
-  - Ghi file theo temporary file + `chmod` + `rename`, bảo toàn nguyên vẹn quyền file (`0755`, umask `027`/`007`).
-
-## Bảo mật
-
-- Approval chỉ dựa trên chế độ **hiện tại**: chuyển từ `auto`/`--yes` về `ask`/`plan` có hiệu lực ngay cho lời gọi tool kế tiếp.
-- API key của vyen (`VYEN_API_KEY` và biến trong `keyEnv`) bị loại khỏi môi trường của mọi tiến trình con (`bash`, `!cmd`, `rg`, `git`), nên model hoặc prompt-injection không thể `env`/`curl` để lấy key. Nếu dự án của bạn cần chính biến đó khi chạy test, hãy dùng một biến khác cho vyen (`--key-env`).
-- Tool đọc ảnh do model gọi (`view_image`, `@ảnh` trong prompt của subagent) chỉ đọc trong workspace; ảnh ngoài workspace cần bạn duyệt. Ảnh bạn tự kéo/thả hoặc dán vẫn đọc được ở bất kỳ đâu.
-- Tool bị ẩn ở chế độ hiện tại (ví dụ `view_image`, subagent trong `--read-only`) không thể bị gọi "chui" bằng tên.
-- API key luôn nhập ẩn (`vyen setup`, `/setup`, `/key`); `vyen doctor` cảnh báo `credentials.json` có quyền quá rộng và base URL `http://` không phải loopback (key bị gửi dạng rõ).
-- **Nhật ký kiểm toán cục bộ (Local Audit Log)**: Tự động ghi nhận mọi quyết định gọi tool, phê duyệt từ xa qua mobile pair, thời gian chạy và token vào các file JSONL hàng ngày dưới `$XDG_DATA_HOME/vyen/audit/` (`audit-YYYY-MM-DD.jsonl`) với cơ chế ngắt file 10MB. Không bao giờ lưu prompt, nội dung file hay API key. Tắt hoàn toàn khi đặt biến môi trường `VYEN_AUDIT=off`.
-- Lưu ý: approval **không phải sandbox của hệ điều hành**; lệnh shell đã duyệt chạy với quyền của user hiện tại.
-
-## Reasoning, Thinking Replay & Gateway Inline Think
-
-- **Bảo toàn `reasoning_content` qua nhiều bước tool (`withReasoningReplay`)**:
-  - Với các endpoint `openai-compatible` ở chế độ thinking (DeepSeek, GLM, Kimi, v.v.), `vyen-cli` giữ nguyên 100% `reasoning_content` thật của model qua các bước gọi tool và resume.
-  - Khi chế độ thinking đang bật (qua `--effort` hoặc lịch sử có khối reasoning) mà có bước `assistant` gọi tool nhanh không sinh thinking, `withReasoningReplay` tự động đính kèm `reasoning_content: ""` trên bản chiếu request để tránh lỗi HTTP 400 (`reasoning_content ... must be passed back`) mà không bao giờ chèn chuỗi giả vào lịch sử lưu trên đĩa.
-- **Tách `<think>...</think>` inline khi stream (`AnswerProjection`)**:
-  - Gateway trả `<think>...</think>` ở đầu `content` được tách ngay khi stream, kể cả khi thẻ bị cắt giữa nhiều chunk. Chỉ phần answer đi vào kết quả cuối và report của agent con.
-  - Native reasoning, chữ ký (`signature`) của Anthropic và provider metadata trong transcript gốc vẫn được giữ nguyên.
-
-```bash
-vyen --show-reasoning --json -p 'Kiểm tra dự án'  # xuất event reasoning riêng
-vyen --show-reasoning -p 'Kiểm tra dự án'         # hiển thị reasoning trên stderr/TUI
-vyen --inline-reasoning off -p 'Trả tài liệu XML bắt đầu bằng <think>'
-```
-
-## MCP (Model Context Protocol)
-
-Vyen dùng MCP SDK chính thức, hỗ trợ **tools và resources qua stdio và Streamable HTTP**.
-Hỗ trợ cấu hình toàn cục tại `~/.config/vyen/mcp.json` (hoặc `$XDG_CONFIG_HOME/vyen/mcp.json`) và cấu hình theo dự án tại `.vyen/mcp.json`.
-Server MCP của dự án mặc định bị vô hiệu hoá để đảm bảo an toàn cho đến khi workspace được tin cậy bằng `--trust-workspace`.
-
-Tạo `~/.config/vyen/mcp.json`:
-
-```json
-{
-  "servers": {
-    "remote": {
-      "transport": "http",
-      "url": "https://YOUR_MCP_HOST/mcp",
-      "bearerEnv": "MY_MCP_TOKEN",
-      "readOnlyTools": []
-    }
-  }
-}
-```
-
-```bash
-vyen mcp list                      # xem cấu hình hợp nhất (user & project), không kết nối
-vyen mcp check                     # kết nối và in tên tool gốc/tên namespaced
-vyen mcp add --preset memory       # cài nhanh server memory chuẩn chính thức
-vyen mcp add --preset fetch        # cài nhanh server fetch chuẩn
-vyen mcp add my-tool --scope=project -- node server.mjs  # thêm MCP server vào .vyen/mcp.json
-vyen mcp remove my-tool --project  # gỡ MCP server khỏi .vyen/mcp.json
-vyen mcp import-codex              # nhập nhanh các MCP server từ ~/.codex/config.toml
-vyen --trust-workspace             # tin cậy workspace và bật project MCP servers
-vyen                               # tự nạp các server đã bật
-vyen --no-mcp                      # bỏ qua MCP trong lượt này
-```
-
-Hệ sinh thái MCP của Vyen hỗ trợ toàn diện:
-- **3 trụ cột MCP chuẩn:** Tools, Resources (`read_mcp_resource`), và Prompts (`list_mcp_prompts`, `get_mcp_prompt`, `/mcp prompts`).
-- **Giao thức 2 chiều:** Tương tác người dùng qua Elicitation và sinh text có kiểm soát qua Bounded Sampling (trần 2.048 tokens).
-- **Bộ nhớ đồ thị Knowledge Graph:** Tự động lưu trữ thực thể và quan hệ trong `knowledge-graph.jsonl`.
-- **Tư duy tuần tự (Sequential Thinking):** Công cụ phân tích lập luận nhiều bước, sửa đổi giả thuyết và rẽ nhánh.
-
-Xem [docs/MCP.md](docs/MCP.md) để biết chi tiết cấu hình stdio, biến môi trường và giới hạn.
-
-## Subagents (Tương tác nền & Uỷ thác theo lô)
-
-- **Vòng đời tương tác kiểu Codex (`spawn_agent`, `wait_agent`, `send_input`, `close_agent`, `list_agents`)**:
-  - Khởi chạy agent con (`explorer` chỉ đọc hoặc `worker` có quyền sửa file) chạy nền song song, gửi thêm chỉ dẫn bằng `send_input` và thu hoạch kết quả qua `wait_agent`.
-- **Uỷ thác theo lô (`delegate_task` & `delegate_edit`)**:
-  - `delegate_task`: chia tối đa 4 việc đọc/review độc lập, tối đa 2 agent chạy đồng thời.
-  - `delegate_edit`: chia tối đa 4 việc sửa file, chạy tuần tự; tôn trọng chế độ duyệt quyền (`ask` hoặc `auto`/`--yes`) của phiên cha.
-
-```bash
-vyen --read-only -p 'Dùng spawn_agent hoặc delegate_task để khảo sát cấu trúc repo và tìm rủi ro trong test'
-vyen -p 'Dùng delegate_edit để sửa lỗi trong src/files.ts và bổ sung regression test'
-vyen --no-subagents -p 'Đọc repo và làm trực tiếp'
-```
-
-## Cấu hình và Dữ liệu
-
-- Config: `$XDG_CONFIG_HOME/vyen/config.json` (mặc định `~/.config/vyen/config.json`).
-- Credentials (API Keys): `$XDG_CONFIG_HOME/vyen/credentials.json` (quyền `0600`).
-- Memories & Presets: `$XDG_CONFIG_HOME/vyen/memories.json`, `$XDG_CONFIG_HOME/vyen/presets.json`.
-- Sessions: `$XDG_DATA_HOME/vyen/sessions/` (mặc định `~/.local/share/vyen/sessions/`).
-- Archives: `SESSION_UUID.compact-N.json` trong cùng thư mục session.
-- Ưu tiên: cờ CLI > biến `VYEN_*` > config người dùng > mặc định.
-
-Các biến môi trường hỗ trợ: `VYEN_PROVIDER`, `VYEN_BASE_URL`, `VYEN_MODEL`, `VYEN_EFFORT`,
-`VYEN_KEY_ENV`, `VYEN_API_KEY`, `VYEN_CONTEXT_WINDOW`, `VYEN_MAX_OUTPUT_TOKENS`,
-`VYEN_TIMEOUT_MS`, `VYEN_RUN_TOKEN_BUDGET`, `VYEN_INLINE_REASONING`, `VYEN_NOTIFY` (`0` để tắt chuông),
-`VYEN_UPDATE` (`disable` | `notify` | `auto`, mặc định `notify`).
-
-- Prompt tuỳ biến: `.vyen/prompts/*.md`, `.agents/prompts/*.md`, `$XDG_CONFIG_HOME/vyen/prompts/*.md`, `~/.codex/prompts/*.md`.
-- Chỉ mục phiên: `sessions/.index.json` (cache tóm tắt theo kích thước + mtime, tự dựng lại khi hỏng hoặc bị xoá).
-
-Context mặc định `128.000` token, output `16.384` token, timeout mỗi request `300.000` ms,
-và **không giới hạn token mỗi lượt chạy theo mặc định** (`runTokenBudget = 0`) để
-tránh ngắt giữa chừng các tác vụ dài. Nếu muốn đặt trần token cho một lượt chạy:
-
-```bash
-vyen --run-token-budget 200000 -p 'Tác vụ có giới hạn ngân sách token'
-```
-
-## Phát triển & Kiểm thử
-
-```bash
-npm ci
-npm run typecheck
-npm run lint
-npm test
-(umask 027; node --test tests/*.test.mjs)
-(umask 007; node --test tests/*.test.mjs)
-npm run build
-npm install -g . --omit=dev
-```
-
-| File | Trách nhiệm |
-|---|---|
-| `src/harness.ts` | Agent loop, retry API, điều phối tool, checkpoint, `/btw`, usage, cancellation |
-| `src/provider.ts` | Chọn adapter API, quét `/models`, truyền `reasoningEffort` / thinking budget |
-| `src/setup.ts` | Setup wizard tương tác (`Esc` để huỷ), quét `/models` động, lưu `credentials.json` |
-| `src/tools.ts`, `src/approval.ts` | Registry, schema, alias chuẩn hoá, `sanitizeBashCommand`, approval và duyệt theo tiền tố lệnh |
-| `src/settings.ts`, `src/policy.ts`, `src/hooks.ts` | Cấu hình dự án `.vyen/settings.json`, phân tầng quyền hạn allow/ask/deny, Hook Bus vòng đời |
-| `src/prompts.ts`, `src/help.ts` | Prompt tuỳ biến `/prompts:<tên>`; nội dung `--help` (nạp nhanh, không kéo SDK) |
-| `src/files.ts`, `src/process.ts` | File I/O, unified diff, patch, backup cho /undo, bảo vệ `nul`, subprocess và lọc biến môi trường bí mật |
-| `src/session.ts` | Lock, checkpoint, rewind, resume và sửa lịch sử bị ngắt |
-| `src/events.ts` | Hợp đồng NDJSON `v1`, schema sự kiện Zod, xác thực `--json-schema` bằng Ajv |
-| `src/context.ts` | System prompt, `AGENTS.md`, `SKILL.md`, `memories.json`, `presets.json` và compaction |
-| `src/cli.ts`, `src/tui.ts` | Flags, giao diện TUI, Transcript Mode (`Ctrl+T`), popup `/slash` |
-| `src/mcp.ts` | MCP client, stdio/HTTP transport, resources, `import-codex`, lifecycle |
-| `src/subagents.ts` | `spawn_agent`/`wait_agent` & `delegate_task`/`delegate_edit`, concurrency, budget |
-| `src/network.ts` | `AgentNetwork` (Brainstorm / Council Room đa vòng) & `AgentNetworkBus` (P2P `peer_send`, `peer_broadcast`, `peer_read`, `peer_list`) |
-| `src/workflow.ts` | Custom Workflow engine (`.json` & `.md`), biến nội suy (`$input`, `$1`, `$prev`), bước `prompt`/`shell`/`subagent`/`network`/`approval` |
-| `src/pair.ts` | Ghép đôi thiết bị qua Cloudflared Tunnel miễn phí, bộ tạo mã QR ISO/IEC 18004 thuần TypeScript và giao diện Mobile Web/SSE |
-| `src/reasoning.ts` | `withReasoningReplay` (`reasoning_content`), `AnswerProjection`, giữ transcript gốc |
-| `src/errors.ts`, `src/config.ts` | Che API key trong thông báo lỗi; schema config, đường dẫn, atomic writes và credential store |
-| `src/update.ts`, `src/version.ts` | Kiểm tra/cập nhật qua npm/pnpm/yarn/bun; version đọc từ manifest đã cài |
-| `src/index.ts`, `src/migrate.ts` | Public exports cho package; migrate dữ liệu `goon` sang `vyen` |
 
 ## Repository & Tự động Release
 
-- Source: [syxgamer122/Vyen-cli](https://github.com/syxgamer122/Vyen-cli)
-- Package: [@nguyenhuumanh/vyen](https://www.npmjs.com/package/@nguyenhuumanh/vyen)
-- GitHub Releases hiện **không** được tạo tự động; workflow chỉ publish lên npm.
+- **Source Code**: [syxgamer122/Vyen-cli](https://github.com/syxgamer122/Vyen-cli)
+- **NPM Package**: [@nguyenhuumanh/vyen](https://www.npmjs.com/package/@nguyenhuumanh/vyen)
+- **Tài liệu chi tiết**: [docs/SPEC.md](docs/SPEC.md) · [docs/AUDIT.md](docs/AUDIT.md) · [docs/MCP.md](docs/MCP.md)
 
-Workflow `Check and release` chạy typecheck, lint và test trên Node 22.16 & Node 24
-cho mọi push lên `main`, pull request và `workflow_dispatch`. Job publish chỉ chạy
-khi push tag `v*`; tag phải khớp `package.json`, sau đó npm publish qua OIDC
-trusted publishing (không lưu token, có provenance). Workflow **không** tự tăng
-version, không tạo tarball/checksum và không tạo GitHub Release.
-
-`scripts/publish-release.mjs` và `scripts/pack-release.mjs` là công cụ đóng gói/
-phát hành chạy local hoặc cho một workflow riêng; workflow hiện tại không gọi chúng.
+GitHub Releases hiện **không** được tạo tự động; workflow chỉ publish lên npm. Job publish chỉ chạy khi push tag `v*`; tag phải khớp `package.json`, sau đó npm publish qua OIDC trusted publishing (không lưu token, có provenance).
