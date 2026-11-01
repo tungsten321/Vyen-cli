@@ -546,7 +546,7 @@ export function isForbiddenRemoteInput(raw: string): boolean {
       return true;
     }
   }
-  if (lower === '/workflow' || lower.startsWith('/workflow ') || lower === '/workflows' || lower.startsWith('/workflows ')) {
+  if (/^\/workflows?(?:[\s]|$)/i.test(lower)) {
     return true;
   }
   return false;

@@ -533,6 +533,26 @@ test('Custom Workflows: shell escaping, awk $1 preservation, approval gates, and
   assert.equal(policyDeniedRes.status, 'failed');
   assert.match(policyDeniedRes.finalOutput, /denied by policy/i);
 
+  let approveCalled = false;
+  const policyDefaultRes = await executeWorkflow(parsedMd, 'login-page', {
+    cwd: f.cwd,
+    signal: AbortSignal.timeout(10_000),
+    policy: () => 'default',
+    approveShell: async () => { approveCalled = true; return false; },
+    runPrompt: async () => 'noop',
+  });
+  assert.equal(policyDefaultRes.status, 'failed');
+  assert.equal(approveCalled, true, 'policy default must invoke approveShell');
+  assert.match(policyDefaultRes.finalOutput, /Permission denied/);
+
+  const policyAskNoHandlerRes = await executeWorkflow(parsedMd, 'login-page', {
+    cwd: f.cwd,
+    signal: AbortSignal.timeout(10_000),
+    policy: () => 'ask',
+    runPrompt: async () => 'noop',
+  });
+  assert.equal(policyAskNoHandlerRes.status, 'failed', 'must fail closed when approval required but no handler');
+
   const fakeHookBus = {
     dispatch: async (event) => {
       if (event === 'PreToolUse') return [{ executed: true, exitCode: 2, stdout: '', stderr: 'Denied by test hook', denied: true }];

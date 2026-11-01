@@ -125,6 +125,16 @@ test('KnowledgeGraph mutation methods throw in read-only mode', async t => {
     () => manager.addObservations([{ entityName: 'Test', contents: ['obs'] }], 'user'),
     /read-only mode/i,
   );
+
+  // Also verify dynamic effectiveReadOnly from an attached ToolRegistry
+  const dynamicManager = new KnowledgeGraphManager({ userGraphPath: graphFile, readOnly: false });
+  const readOnlyRegistry = new ToolRegistry(f.cwd, async () => false);
+  readOnlyRegistry.planMode = true;
+  dynamicManager.registerTools(readOnlyRegistry);
+  await assert.rejects(
+    () => dynamicManager.createEntities([{ name: 'Test2', entityType: 'concept', observations: [] }], 'user'),
+    /read-only mode/i,
+  );
 });
 
 test('KnowledgeGraph tools registered on ToolRegistry allow CRUD operations', async t => {

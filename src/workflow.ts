@@ -639,7 +639,10 @@ export async function executeWorkflow(
           if (decision === 'deny') {
             throw new Error(`Shell command is denied by policy: ${cmd}`);
           }
-          if (decision === 'ask' && hooks.approveShell) {
+          if (decision === 'ask' || decision === 'default') {
+            if (!hooks.approveShell) {
+              throw new Error(`Permission denied: shell command requires approval but no approval handler was configured: ${cmd}`);
+            }
             const allowed = await hooks.approveShell(cmd, hooks.signal);
             if (!allowed) {
               throw new Error(`Permission denied by the user for shell command: ${cmd}`);

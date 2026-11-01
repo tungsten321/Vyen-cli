@@ -515,6 +515,9 @@ test('bash deny and ask rules cannot be bypassed by quoting or escaping the comm
     'sudo "rm" -rf /',
     'doas "rm" -rf /',
     'pkexec "rm" -rf /',
+    'su -c "rm -rf /"',
+    'su user -c "rm -rf /"',
+    'su - user -c "rm -rf /"',
     'echo hi && "rm" -rf /',
   ]) {
     assert.equal(
