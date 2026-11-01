@@ -474,4 +474,38 @@ test('webSearch standalone policy check rejects ask decision', async () => {
     }),
     /approval|policy/i,
   );
+});test('isPrivateIp recognizes bracketed and whitespace-padded IPv4 and IPv6 addresses', () => {
+  assert.equal(isPrivateIp('[127.0.0.1]'), true, 'bracketed IPv4 loopback');
+  assert.equal(isPrivateIp(' 127.0.0.1 '), true, 'whitespace-padded IPv4 loopback');
+  assert.equal(isPrivateIp('[169.254.169.254]'), true, 'bracketed cloud metadata');
+  assert.equal(isPrivateIp(' [::1] '), true, 'whitespace-padded bracketed IPv6 loopback');
+  assert.equal(isPrivateIp(' [::ffff:127.0.0.1] '), true, 'whitespace-padded IPv4-mapped loopback');
+});
+
+test('ToolRegistry allows web_search when user approves ask policy decision', async () => {
+  let promptCount = 0;
+  const registry = new ToolRegistry(
+    process.cwd(),
+    async () => {
+      promptCount++;
+      return true; // user approves
+    },
+  );
+  registry.policy = () => 'ask';
+  const result = await registry.execute(
+    {
+      callId: 'c1',
+      toolName: 'web_search',
+      input: { query: 'test query' },
+    },
+    new AbortController().signal,
+  );
+  assert.equal(result.denied, undefined);
+  assert.equal(promptCount, 1);
+  assert.equal(result.decision, 'ask_approved');
+});
+
+test('convertHtmlToMarkdown handles unclosed li tags cleanly', () => {
+  const unclosedList = '<ul><li>First<li>Second</ul>';
+  assert.equal(convertHtmlToMarkdown(unclosedList), '- First\n- Second');
 });

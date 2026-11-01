@@ -48,6 +48,8 @@ export interface WebSearchResult {
 export interface WebSearchOptions {
   query: string;
   limit?: number;
+  approved?: boolean;
+  approve?: (request: { tool: string; input: unknown; signal: AbortSignal }) => Promise<boolean>;
   policy?: { evaluate?: (tool: string, resource: string) => PolicyDecision };
   signal?: AbortSignal;
   mockEngines?: {
@@ -61,7 +63,7 @@ export interface WebSearchOptions {
  * Normalizes an IP address, converting uncompressed IPv6 representations to canonical RFC 5952 form.
  */
 export function normalizeIp(ip: string): string {
-  const clean = ip.replace(/^\[|\]$/g, '').trim().toLowerCase();
+  const clean = ip.trim().replace(/^\[|\]$/g, '').trim().toLowerCase();
   if (net.isIPv6(clean)) {
     try {
       const canonical = new URL(`http://[${clean}]`).hostname;
@@ -102,8 +104,8 @@ export function isPrivateIp(ip: string): boolean {
     return true;
   }
 
-  if (net.isIPv4(ip)) {
-    const parts = ip.split('.').map(Number);
+  if (net.isIPv4(clean)) {
+    const parts = clean.split('.').map(Number);
     const [b0, b1, b2] = parts;
 
     // 0.0.0.0/8 (Current network)
@@ -279,7 +281,7 @@ export function convertHtmlToMarkdown(html: string): string {
   text = text.replace(/<a\s+(?:[^>]*?\s+)?href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (_, href, content) => `[${content.trim()}](${href})`);
 
   // Convert list items
-  text = text.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, '\n- $1');
+  text = text.replace(/<li[^>]*>/gi, '\n- ');
 
   // Convert blockquotes and paragraphs (multiline-safe)
   text = text.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, '\n> $1\n');
@@ -537,8 +539,10 @@ export async function webSearch(options: WebSearchOptions): Promise<WebSearchRes
     if (decision === 'deny') {
       throw new Error(`Web search for "${query}" is denied by policy.`);
     }
-    if (decision === 'ask') {
-      throw new Error(`Web search for "${query}" requires approval by policy.`);
+    if (decision === 'ask' && !options.approved) {
+      if (!options.approve || !(await options.approve({ tool: 'web_search', input: { query }, signal: options.signal ?? new AbortController().signal }))) {
+        throw new Error(`Web search for "${query}" requires approval by policy.`);
+      }
     }
   }
 
@@ -665,7 +669,7 @@ export async function webSearch(options: WebSearchOptions): Promise<WebSearchRes
       results = (parsed?.results ?? []).map((item) => ({
         title: String(item.title ?? item.url ?? ''),
         url: String(item.url ?? ''),
-        snippet: Array.isArray(item.excerpts)
+        snippet: Array.isArray(item.excerpts) && item.excerpts.length > 0
           ? item.excerpts.join('\n\n')
           : String(item.snippet ?? item.description ?? ''),
       }));

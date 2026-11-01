@@ -593,6 +593,8 @@ export class ToolRegistry {
         const result = await webSearch({
           query: input.query,
           signal,
+          approved: true,
+          approve: request => this.approve(request),
           policy: this.policy
             ? {
                 evaluate: (tool, resource) =>
