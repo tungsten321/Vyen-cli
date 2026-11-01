@@ -372,8 +372,9 @@ export class WorkspaceFiles {
       : file;
     const info = await stat(target);
     if (!info.isFile() || info.size > MAX_FILE_BYTES) throw new Error('Expected a regular text file no larger than 2 MiB.');
-    const text = await readFile(target, 'utf8');
-    if (text.includes('\0')) throw new Error('Binary files are not supported.');
+    const buf = await readFile(target);
+    if (buf.includes(0)) throw new Error('Binary files are not supported.');
+    const text = buf.toString('utf8');
     return text;
   }
   async read(path: string, offset = 1, lines = 200) {

@@ -1321,6 +1321,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
               const res = await executeWorkflow(wf, input.input, {
                 cwd: runtime.cwd,
                 signal,
+                policy: req => reg.policy?.(req) ?? 'ask',
                 hookBus,
                 effectiveReadOnly: reg.effectiveReadOnly,
                 approveShell: (command, stepSig) =>
@@ -3441,6 +3442,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
               const wfRes = await executeWorkflow(matched, wfArgs, {
                 cwd: runtime.cwd,
                 signal: controller.signal,
+                policy: req => tools.policy?.(req) ?? 'ask',
                 hookBus: harness.hookBus,
                 effectiveReadOnly: tools.effectiveReadOnly,
                 approveShell: (command, stepSig) =>

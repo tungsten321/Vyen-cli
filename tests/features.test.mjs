@@ -241,6 +241,8 @@ test('PairManager enforces token auth on GET /, blocks remote auto/shell escalat
   assert.equal(isForbiddenRemoteInput('/auto on'), true);
   assert.equal(isForbiddenRemoteInput('/yolo'), true);
   assert.equal(isForbiddenRemoteInput('/mode auto'), true);
+  assert.equal(isForbiddenRemoteInput('/workflow run evil'), true);
+  assert.equal(isForbiddenRemoteInput('/workflows run evil'), true);
   // A leading `/` alone is not an escalation: a path answer or prompt text must stay allowed.
   assert.equal(isForbiddenRemoteInput('/etc/hosts'), false);
   assert.equal(isForbiddenRemoteInput('/tmp/build.log is empty, explain why'), false);
@@ -520,6 +522,16 @@ test('Custom Workflows: shell escaping, awk $1 preservation, approval gates, and
   });
   assert.equal(deniedRes.status, 'failed');
   assert.match(deniedRes.finalOutput, /Permission denied/);
+
+  const policyDeniedRes = await executeWorkflow(parsedMd, 'login-page', {
+    cwd: f.cwd,
+    signal: AbortSignal.timeout(10_000),
+    policy: () => 'deny',
+    approveShell: async () => true,
+    runPrompt: async () => 'noop',
+  });
+  assert.equal(policyDeniedRes.status, 'failed');
+  assert.match(policyDeniedRes.finalOutput, /denied by policy/i);
 
   const fakeHookBus = {
     dispatch: async (event) => {

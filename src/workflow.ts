@@ -6,6 +6,7 @@ import { sanitizeBashCommand } from './tools.js';
 import { runCommand, type CommandResult } from './process.js';
 import { limitText } from './files.js';
 import { sanitizeEnvironment, type HookBus } from './hooks.js';
+import type { PolicyDecision } from './policy.js';
 
 export type WorkflowStepType = 'prompt' | 'shell' | 'subagent' | 'network' | 'approval';
 
@@ -553,6 +554,7 @@ export async function removeCustomWorkflow(cwd: string, name: string): Promise<s
 export interface WorkflowExecutionHooks {
   cwd: string;
   signal: AbortSignal;
+  policy?: (request: { tool: string; input: unknown }) => PolicyDecision;
   hookBus?: HookBus;
   effectiveReadOnly?: boolean;
   onProgress?: (text: string) => void;
@@ -632,7 +634,18 @@ export async function executeWorkflow(
         const rawCmd = interp(step.command ?? step.prompt ?? '', 'shell');
         if (!rawCmd.trim()) throw new Error(`Shell step "${step.id}" has no command.`);
         const cmd = sanitizeBashCommand(rawCmd);
-        if (hooks.approveShell) {
+        if (hooks.policy) {
+          const decision = hooks.policy({ tool: 'bash', input: { command: cmd } });
+          if (decision === 'deny') {
+            throw new Error(`Shell command is denied by policy: ${cmd}`);
+          }
+          if (decision === 'ask' && hooks.approveShell) {
+            const allowed = await hooks.approveShell(cmd, hooks.signal);
+            if (!allowed) {
+              throw new Error(`Permission denied by the user for shell command: ${cmd}`);
+            }
+          }
+        } else if (hooks.approveShell) {
           const allowed = await hooks.approveShell(cmd, hooks.signal);
           if (!allowed) {
             throw new Error(`Permission denied by the user for shell command: ${cmd}`);

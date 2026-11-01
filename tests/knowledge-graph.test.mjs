@@ -108,6 +108,25 @@ test('readGraph prevents disk write when planMode is activated dynamically after
   assert.equal(existsSync(graphFile), false, 'Must not write to disk when planMode is dynamically enabled');
 });
 
+test('KnowledgeGraph mutation methods throw in read-only mode', async t => {
+  const f = await fixture(t);
+  const graphFile = join(f.cwd, 'knowledge-graph.jsonl');
+  const manager = new KnowledgeGraphManager({ userGraphPath: graphFile, readOnly: true });
+
+  await assert.rejects(
+    () => manager.createEntities([{ name: 'Test', entityType: 'concept', observations: [] }], 'user'),
+    /read-only mode/i,
+  );
+  await assert.rejects(
+    () => manager.createRelations([{ from: 'A', to: 'B', relationType: 'rel' }], 'user'),
+    /read-only mode/i,
+  );
+  await assert.rejects(
+    () => manager.addObservations([{ entityName: 'Test', contents: ['obs'] }], 'user'),
+    /read-only mode/i,
+  );
+});
+
 test('KnowledgeGraph tools registered on ToolRegistry allow CRUD operations', async t => {
   const f = await fixture(t);
   const graphFile = join(f.cwd, 'knowledge-graph.jsonl');

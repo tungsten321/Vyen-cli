@@ -151,6 +151,9 @@ test('provider credentials never reach child processes', async t => {
   protectSecretEnv('CUSTOM_PROVIDER_KEY');
   assert.equal(childEnv().VYEN_API_KEY, undefined);
   assert.equal(childEnv().CUSTOM_PROVIDER_KEY, undefined);
+  assert.equal(childEnv({ OPENAI_API_KEY: 'sk-123' }).OPENAI_API_KEY, undefined);
+  assert.equal(childEnv({ GITHUB_TOKEN: 'ghp_abc' }).GITHUB_TOKEN, undefined);
+  assert.equal(childEnv({ anthropic_api_key: 'sk-ant-456' }).anthropic_api_key, undefined);
   const registry = new ToolRegistry(f.cwd, async () => true);
   const out = await registry.execute({ toolCallId: '1', toolName: 'bash', input: { command: 'echo "[$VYEN_API_KEY][$CUSTOM_PROVIDER_KEY][${PATH:+path}]"' } }, signal());
   assert.match(out.text, /\[\]\[\]\[path\]/);

@@ -235,3 +235,13 @@ test('session export refuses to overwrite a non-export file', async t => {
   assert.equal(await readFile(join(f.cwd, 'session.md'), 'utf8'), '# Vyen Session demo\nsecond\n');
 });
 
+test('WorkspaceFiles text refuses binary files with null bytes', async t => {
+  const f = await fixture(t), files = new WorkspaceFiles(f.cwd);
+  const binPath = join(f.cwd, 'test.bin');
+  await writeFile(binPath, Buffer.from([0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x00, 0x77, 0x6f, 0x72, 0x6c, 0x64]));
+  await assert.rejects(
+    files.text(binPath),
+    /Binary files are not supported/,
+  );
+});
+

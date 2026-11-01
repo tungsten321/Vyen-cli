@@ -34,7 +34,9 @@ export function isSecretEnv(name: string): boolean {
 }
 export function childEnv(base: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
   const env = { ...base };
-  for (const name of secretEnvNames) delete env[name];
+  for (const key of Object.keys(env)) {
+    if (isSecretEnv(key)) delete env[key];
+  }
   return env;
 }
 const OUTPUT_LIMIT = 64 * 1024;

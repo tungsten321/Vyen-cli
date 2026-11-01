@@ -157,6 +157,12 @@ export class KnowledgeGraphManager {
     }
   }
 
+  private checkMutable(): void {
+    if (this.readOnly || Boolean(this.registry?.effectiveReadOnly)) {
+      throw new Error('Knowledge Graph modifications are disabled in read-only mode.');
+    }
+  }
+
   private async withWriteLock<T>(fn: () => Promise<T>): Promise<T> {
     const run = async () => fn();
     const next = this.writeQueue.then(run, run);
@@ -200,6 +206,7 @@ export class KnowledgeGraphManager {
   }
 
   async createEntities(entities: Entity[], scope: 'user' | 'project' = 'user'): Promise<Entity[]> {
+    this.checkMutable();
     this.checkTrust(scope);
     return this.withWriteLock(async () => {
       const filePath = this.resolvePath(scope);
@@ -227,6 +234,7 @@ export class KnowledgeGraphManager {
   }
 
   async createRelations(relations: Relation[], scope: 'user' | 'project' = 'user'): Promise<Relation[]> {
+    this.checkMutable();
     this.checkTrust(scope);
     return this.withWriteLock(async () => {
       const filePath = this.resolvePath(scope);
@@ -254,6 +262,7 @@ export class KnowledgeGraphManager {
     observations: Array<{ entityName: string; contents: string[] }>,
     scope: 'user' | 'project' = 'user',
   ): Promise<void> {
+    this.checkMutable();
     this.checkTrust(scope);
     return this.withWriteLock(async () => {
       const filePath = this.resolvePath(scope);
