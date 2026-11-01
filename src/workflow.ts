@@ -3,9 +3,9 @@ import { join, resolve } from 'node:path';
 import { z } from 'zod';
 import { atomicJson, configDir, type EffortLevel } from './config.js';
 import { sanitizeBashCommand } from './tools.js';
-import { runCommand } from './process.js';
+import { runCommand, type CommandResult } from './process.js';
 import { limitText } from './files.js';
-import { sanitizeEnvironment } from './hooks.js';
+import { sanitizeEnvironment, type HookBus } from './hooks.js';
 
 export type WorkflowStepType = 'prompt' | 'shell' | 'subagent' | 'network' | 'approval';
 
@@ -553,6 +553,7 @@ export async function removeCustomWorkflow(cwd: string, name: string): Promise<s
 export interface WorkflowExecutionHooks {
   cwd: string;
   signal: AbortSignal;
+  hookBus?: HookBus;
   effectiveReadOnly?: boolean;
   onProgress?: (text: string) => void;
   approveShell?: (command: string, signal: AbortSignal) => Promise<boolean>;
@@ -637,6 +638,23 @@ export async function executeWorkflow(
             throw new Error(`Permission denied by the user for shell command: ${cmd}`);
           }
         }
+        if (hooks.hookBus) {
+          const preHooks = await hooks.hookBus.dispatch('PreToolUse', {
+            tool: 'bash',
+            input: { command: cmd },
+            workflow: workflow.name,
+            stepId: step.id,
+          });
+          const failedPreHook = preHooks.find(h => h.denied || h.timedOut || Boolean(h.error));
+          if (failedPreHook) {
+            const reason = failedPreHook.timedOut
+              ? 'PreToolUse hook timed out.'
+              : failedPreHook.error
+                ? failedPreHook.error
+                : (failedPreHook.stderr?.trim() || 'Tool execution denied by PreToolUse hook.');
+            throw new Error(`Permission denied by hook for shell command: ${reason}`);
+          }
+        }
         hooks.onProgress?.(`  $ ${cmd}\n`);
         const baseEnv = sanitizeEnvironment(process.env);
         const wfEnv: NodeJS.ProcessEnv = {
@@ -650,13 +668,46 @@ export async function executeWorkflow(
         for (const [k, v] of Object.entries(parsedArgs.named)) {
           wfEnv[`VYEN_WF_VAR_${k.replace(/[^A-Za-z0-9_]/g, '_').toUpperCase()}`] = v;
         }
-        const res = await runCommand('bash', ['-c', cmd], {
-          cwd: hooks.cwd,
-          env: wfEnv,
-          signal: AbortSignal.any([hooks.signal, AbortSignal.timeout(120_000)]),
-          timeoutMs: 120_000,
-        });
+        let res: CommandResult;
+        try {
+          res = await runCommand('bash', ['-c', cmd], {
+            cwd: hooks.cwd,
+            env: wfEnv,
+            signal: AbortSignal.any([hooks.signal, AbortSignal.timeout(120_000)]),
+            timeoutMs: 120_000,
+          });
+        } catch (spawnError) {
+          if (hooks.hookBus) {
+            await hooks.hookBus.dispatch('PostToolUseFailure', {
+              tool: 'bash',
+              input: { command: cmd },
+              error: spawnError instanceof Error ? spawnError.message : String(spawnError),
+              workflow: workflow.name,
+              stepId: step.id,
+            });
+          }
+          throw spawnError;
+        }
         stepOutput = limitText(`Exit code: ${res.code}\n${res.output}`.trim(), 12_000);
+        if (hooks.hookBus) {
+          if (res.code === 0) {
+            await hooks.hookBus.dispatch('PostToolUse', {
+              tool: 'bash',
+              input: { command: cmd },
+              output: stepOutput,
+              workflow: workflow.name,
+              stepId: step.id,
+            });
+          } else {
+            await hooks.hookBus.dispatch('PostToolUseFailure', {
+              tool: 'bash',
+              input: { command: cmd },
+              error: `Exit code: ${res.code}`,
+              workflow: workflow.name,
+              stepId: step.id,
+            });
+          }
+        }
         if (res.code !== 0 && !step.continueOnError) {
           throw new Error(`Command exited with code ${res.code}:\n${res.output.slice(0, 1000)}`);
         }

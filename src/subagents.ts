@@ -17,6 +17,7 @@ import {
 } from './network.js';
 import { KnowledgeGraphManager } from './memory.js';
 import type { HookBus } from './hooks.js';
+import type { AuditLogger } from './audit.js';
 
 export type SubagentProgress = Exclude<HarnessEvent, { type: 'text' | 'reasoning' | 'tool_stream' }>;
 export type SubagentEvent =
@@ -181,6 +182,7 @@ export class Subagents {
   readonly metadataById = new Map<string, { nickname: string; role: AgentRoleType; task: string }>();
   readonly bus = new AgentNetworkBus();
   readonly network: AgentNetwork;
+  readonly isTrusted: boolean;
 
   constructor(
     readonly config: RuntimeConfig,
@@ -188,7 +190,10 @@ export class Subagents {
     readonly registry: ToolRegistry,
     readonly emit: (event: SubagentEvent) => void = () => {},
     readonly hookBus?: HookBus,
+    isTrusted?: boolean,
+    readonly auditLogger?: AuditLogger,
   ) {
+    this.isTrusted = isTrusted ?? this.hookBus?.isTrusted ?? false;
     this.network = new AgentNetwork(
       this.config,
       this.parent,
@@ -520,7 +525,7 @@ export class Subagents {
       this.bus.registerPeerTools(tools, managed.nickname, managed.agentType);
       new KnowledgeGraphManager({
         projectGraphPath: join(childConfig.cwd, '.vyen', 'knowledge-graph.jsonl'),
-        isTrusted: this.hookBus?.isTrusted ?? false,
+        isTrusted: this.isTrusted,
       }).registerTools(tools);
       const peerInbox = this.bus.drainUnreadPromptBlock(managed.nickname);
       const effectivePrompt = peerInbox ? `${prompt}\n${peerInbox}` : prompt;
@@ -528,7 +533,7 @@ export class Subagents {
         if (event.type !== 'text' && event.type !== 'reasoning' && event.type !== 'tool_stream') {
           this.emit({ type: 'subagent', id: managed.id, state: 'progress', event });
         }
-      }, undefined, this.hookBus);
+      }, undefined, this.hookBus, this.auditLogger, managed.id);
       // The task text was written by the parent model, not typed by the user.
       childHarness.untrustedPrompts = true;
       await childHarness.run(effectivePrompt, signal, budget);
@@ -863,7 +868,7 @@ export class Subagents {
       tools.policy = this.registry.policy;
       new KnowledgeGraphManager({
         projectGraphPath: join(this.config.cwd, '.vyen', 'knowledge-graph.jsonl'),
-        isTrusted: this.hookBus?.isTrusted ?? false,
+        isTrusted: this.isTrusted,
       }).registerTools(tools);
       // No delegation tools are registered in children: depth is exactly one.
       const config = { ...this.config };
@@ -873,7 +878,7 @@ export class Subagents {
         if (event.type !== 'text' && event.type !== 'reasoning' && event.type !== 'tool_stream') {
           this.emit({ type: 'subagent', id, state: 'progress', event });
         }
-      }, undefined, this.hookBus);
+      }, undefined, this.hookBus, this.auditLogger, id);
       childHarness.untrustedPrompts = true;
       await childHarness.run(
         `You are a delegated agent. Complete this task and return a concise report with evidence. Do not ask other agents.\n\n${task}`,

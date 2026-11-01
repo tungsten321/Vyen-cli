@@ -220,6 +220,7 @@ tên lệnh, `$1`…`$9` là từng từ, `$$` là ký tự `$`.
 
 - **Bộ công cụ tích hợp đầy đủ**:
   - **File & Shell**: `read_file`, `list_files`, `search`, `write_file`, `edit_file`, `apply_patch`, `bash`, `view_image`.
+  - **Web Tools**: `web_fetch` (đọc nội dung web sang Markdown/Text/HTML có phòng thủ SSRF, chống DNS rebinding, kiểm tra redirect và giới hạn 5MB) và `web_search` (tìm kiếm thông tin thời gian thực không cần API key với cơ chế dự phòng 3 lớp: DuckDuckGo Lite, TinyFish Keyless và Parallel Keyless).
   - **Kế hoạch & Tương tác**: `todo_read`, `todo_write`, `update_plan`, `request_user_input`, `exit_plan_mode`.
   - **Subagents (7 công cụ)**: Vòng đời tương tác (`spawn_agent`, `wait_agent`, `send_input`, `close_agent`, `list_agents`) và uỷ thác theo lô (`delegate_task`, `delegate_edit`).
   - **MCP Resources & Tools**: `list_mcp_resources`, `list_mcp_resource_templates`, `read_mcp_resource` cùng các tool động từ MCP server (`mcp__<server>__<tool>`).
@@ -229,7 +230,7 @@ tên lệnh, `$1`…`$9` là từng từ, `$$` là ký tự `$`.
   - Tổng dung lượng bản sao lưu mỗi phiên giới hạn 32 MiB (các lượt cũ nhất bị lược nội dung trước và được báo rõ khi revert), để file phiên không phình to vô hạn.
 - **`apply_patch` đầy đủ định dạng Codex**: hỗ trợ `*** Move to:` (đổi tên/di chuyển), nhiều khối `Update File` cho cùng một file, file thêm mới luôn kết thúc bằng newline; patch chỉ được ghi khi **mọi** hunk đều khớp.
 - **Tự động Retry API**: Khi gặp lỗi mạng hoặc lỗi upstream tạm thời (HTTP `5xx`, `429`, `408`, lỗi đóng stream/socket bất ngờ), Harness tự động thử lại tối đa **3 lần** với exponential backoff + jitter, tôn trọng header `Retry-After` (tối đa 20 giây) trước khi dừng.
-- **Đọc song song**: tối đa 6 lời gọi tool chỉ-đọc liên tiếp (`read_file`, `search`, `list_files`, MCP read-only…) chạy đồng thời; thao tác ghi và shell vẫn tuần tự theo đúng thứ tự model yêu cầu.
+- **Đọc song song**: tối đa 6 lời gọi tool chỉ-đọc liên tiếp (`read_file`, `search`, `list_files`, `web_fetch`, `web_search`, MCP read-only…) chạy đồng thời; thao tác ghi và shell vẫn tuần tự theo đúng thứ tự model yêu cầu.
 - **Hiển thị đầy đủ Unified Diff**: `computeUnifiedDiff` hiển thị trọn vẹn số dòng thêm/xoá thực tế (`+N -M`, hỗ trợ tới 5.000 dòng mỗi hunk).
 - **Bảo vệ chống lỗi file `nul` trên Windows**:
   - Tự động chuyển hướng `>nul`, `2>nul`, `>>NUL`, `>/dev/nul` trong lệnh `bash` trên Windows về `/dev/null` an toàn (`sanitizeBashCommand`).

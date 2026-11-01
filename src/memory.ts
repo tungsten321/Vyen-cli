@@ -131,6 +131,7 @@ export interface KnowledgeGraphManagerOptions {
   projectGraphPath?: string;
   legacyMemoryPath?: string;
   isTrusted?: boolean;
+  readOnly?: boolean;
 }
 
 export class KnowledgeGraphManager {
@@ -138,6 +139,8 @@ export class KnowledgeGraphManager {
   private projectGraphPath: string;
   private legacyMemoryPath: string;
   private isTrusted: boolean;
+  readOnly: boolean;
+  private registry?: ToolRegistry;
   private writeQueue: Promise<void> = Promise.resolve();
 
   constructor(options: KnowledgeGraphManagerOptions = {}) {
@@ -145,6 +148,7 @@ export class KnowledgeGraphManager {
     this.projectGraphPath = options.projectGraphPath ?? join(process.cwd(), '.vyen', 'knowledge-graph.jsonl');
     this.legacyMemoryPath = options.legacyMemoryPath ?? join(configDir(), 'memories.json');
     this.isTrusted = options.isTrusted ?? false;
+    this.readOnly = options.readOnly ?? false;
   }
 
   private checkTrust(scope: 'user' | 'project'): void {
@@ -180,9 +184,12 @@ export class KnowledgeGraphManager {
             entityType: 'system_memory',
             observations: legacyMemories.map(m => String(m)),
           });
-          await this.withWriteLock(async () => {
-            await saveGraph(filePath, graph, unreadable);
-          });
+          const isReadOnly = this.readOnly || Boolean(this.registry?.effectiveReadOnly);
+          if (!isReadOnly) {
+            await this.withWriteLock(async () => {
+              await saveGraph(filePath, graph, unreadable);
+            });
+          }
         }
       } catch {
         // Ignore legacy parse errors
@@ -302,6 +309,10 @@ export class KnowledgeGraphManager {
   }
 
   registerTools(registry: ToolRegistry): void {
+    this.registry = registry;
+    if (registry.effectiveReadOnly) {
+      this.readOnly = true;
+    }
     registry.register('mcp_create_entities', {
       description: 'Create new entities in the Knowledge Graph memory.',
       schema: z.object({

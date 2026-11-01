@@ -28,7 +28,7 @@ test('real CLI delegates isolated research contexts, caps concurrency at two and
     if (isChild(body)) {
       children++; active++; maximum = Math.max(maximum, active);
       assert(!JSON.stringify(body.messages).includes('parent-private-context'));
-      assert.deepEqual(body.tools.map(t => t.function.name).sort(), ['list_files', 'read_file', 'search']);
+      assert.deepEqual(body.tools.map(t => t.function.name).sort(), ['list_files', 'read_file', 'search', 'web_fetch', 'web_search']);
       // Hold the first child until a second one arrives. A fixed sleep made
       // the overlap depend on scheduler luck, so the cap was only asserted
       // when the machine happened to be idle.
@@ -125,7 +125,7 @@ test('SIGINT cancels and drains active subagents and releases all locks', async 
 test('--no-subagents removes both delegation tools', async t => {
   const f = await fixture(t);
   const p = await provider(t, (body, response) => {
-    assert.deepEqual(body.tools.map(t => t.function.name).sort(), ['list_files', 'read_file', 'search']);
+    assert.deepEqual(body.tools.map(t => t.function.name).sort(), ['list_files', 'read_file', 'search', 'web_fetch', 'web_search']);
     sse(response, { text: 'Direct run.' });
   });
   const result = await cli(f, p.url, ['--no-subagents', '--read-only', '-p', 'inspect']).done;
@@ -492,4 +492,31 @@ test('subagent cleanup dispatches SessionEnd once for the child session', async 
     seen.some(e => e.event === 'SessionStart' && e.payload.sessionId === childId),
     'the child session must have started before it ends',
   );
+});
+
+test('subagents inherit workspace trust and pass subagentId to child harness', async t => {
+  const f = await fixture(t);
+  let loggedSubagentId;
+  const p = await provider(t, (req, res, n) => {
+    if (n === 1) {
+      return sse(res, { calls: [{ id: 'c1', name: 'read_file', input: { path: 'test.txt' } }] });
+    }
+    return sse(res, { text: 'Child done.' });
+  });
+  const config = configFor(f, p);
+  const store = await SessionStore.open(join(f.data, 'sessions'), config);
+  t.after(() => store.close());
+  const tools = new ToolRegistry(f.cwd, async () => true);
+
+  const fakeAuditLogger = {
+    recordToolDecision: async record => { loggedSubagentId = record.subagentId; },
+    addSecretKey: () => {},
+  };
+
+  // hookBus is undefined (no project hooks), but isTrusted is true
+  const subagents = new Subagents(config, store, tools, () => {}, undefined, true, fakeAuditLogger);
+  assert.equal(subagents.isTrusted, true);
+
+  await subagents.run(['analyze workspace task'], true, AbortSignal.timeout(5000));
+  assert.ok(loggedSubagentId, 'child harness must supply its subagentId to audit records');
 });

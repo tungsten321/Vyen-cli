@@ -10,11 +10,27 @@ export interface CommandResult { code: number; output: string; truncated: boolea
  * for `env` / `curl ...$VYEN_API_KEY`) can never read or exfiltrate the key.
  */
 const secretEnvNames = new Set<string>(['VYEN_API_KEY']);
+const DEFAULT_PROTECTED_SECRETS = new Set<string>([
+  'VYEN_API_KEY',
+  'GOON_API_KEY',
+  'OPENAI_API_KEY',
+  'ANTHROPIC_API_KEY',
+  'GEMINI_API_KEY',
+  'GOOGLE_API_KEY',
+  'AWS_SECRET_ACCESS_KEY',
+  'GITHUB_TOKEN',
+  'GH_TOKEN',
+]);
+
 export function protectSecretEnv(...names: Array<string | undefined>): void {
   for (const name of names) if (name) secretEnvNames.add(name);
 }
 export function isSecretEnv(name: string): boolean {
-  return secretEnvNames.has(name);
+  const upper = name.toUpperCase();
+  for (const secret of secretEnvNames) {
+    if (secret.toUpperCase() === upper) return true;
+  }
+  return DEFAULT_PROTECTED_SECRETS.has(upper);
 }
 export function childEnv(base: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
   const env = { ...base };

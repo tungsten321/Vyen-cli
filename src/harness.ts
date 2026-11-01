@@ -98,7 +98,8 @@ function extractStreamPreview(rawJson: string): string {
   const pathMatch = /"(?:path|filePath|file_path|directory)"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/.exec(rawJson);
   const cmdMatch = /"(?:command|cmd)"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/.exec(rawJson);
   const queryMatch = /"(?:query|pattern)"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/.exec(rawJson);
-  const target = (pathMatch?.[1] ?? cmdMatch?.[1] ?? queryMatch?.[1] ?? '').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+  const urlMatch = /"url"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/.exec(rawJson);
+  const target = (pathMatch?.[1] ?? cmdMatch?.[1] ?? queryMatch?.[1] ?? urlMatch?.[1] ?? '').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
   const lines = rawJson.split(/\\n|\n/).length;
   const kb = (Buffer.byteLength(rawJson) / 1024).toFixed(1);
   if (target && rawJson.length > 120) return `${target} (${lines} lines · ${kb} KB)`;
@@ -125,6 +126,14 @@ function buildToolMeta(toolName: string, rawInput: unknown): ToolEventMeta {
   if (canonical === 'search') {
     const q = typeof rec.query === 'string' ? rec.query.trim() : '';
     return { kind: 'search', summary: pathStr !== '.' ? `${q} in ${pathStr}` : q };
+  }
+  if (canonical === 'web_fetch') {
+    const url = typeof rec.url === 'string' ? rec.url.trim() : '';
+    return { kind: 'read', summary: url };
+  }
+  if (canonical === 'web_search') {
+    const q = typeof rec.query === 'string' ? rec.query.trim() : '';
+    return { kind: 'search', summary: q };
   }
   if (canonical === 'bash') {
     const cmd = typeof rec.command === 'string' ? rec.command.trim().replace(/\s+/g, ' ') : '';
@@ -234,6 +243,9 @@ function buildToolMeta(toolName: string, rawInput: unknown): ToolEventMeta {
   if (canonical === 'run_workflow') {
     const wf = typeof rec.name === 'string' ? rec.name : 'workflow';
     return { kind: 'other', summary: wf };
+  }
+  if (canonical === 'exit_plan_mode') {
+    return { kind: 'other', summary: 'propose plan for approval' };
   }
   return { kind: 'other', summary: canonical };
 }

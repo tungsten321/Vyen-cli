@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { WorkspaceFiles, limitText, unlinkSafe } from './files.js';
 import { runCommand } from './process.js';
 import { todoItemSchema, type SessionGoal, type TodoItem } from './session.js';
+import { webFetch, webSearch } from './web.js';
 
 export function sanitizeBashCommand(command: string, platform = process.platform): string {
   if (platform !== 'win32') return command;
@@ -114,6 +115,9 @@ export function normalizeToolInput(toolName: string, input: unknown): unknown {
     if (toolName === 'agent_network') return { topic: input };
     if (toolName === 'run_workflow') return { name: input, input: '' };
     if (toolName === 'peer_broadcast') return { topic: 'General', message: input };
+    if (toolName === 'apply_patch') return { patch: input };
+    if (toolName === 'web_fetch') return { url: input };
+    if (toolName === 'web_search') return { query: input };
     return input;
   }
   if (!input || typeof input !== 'object' || Array.isArray(input)) return input;
@@ -191,6 +195,34 @@ export function normalizeToolInput(toolName: string, input: unknown): unknown {
     delete obj.new_str;
     delete obj.new_text;
     delete obj.replace_all;
+  }
+  if (toolName === 'apply_patch') {
+    if (obj.patch === undefined) {
+      const aliasPatch = obj.diff ?? obj.patch_text ?? obj.patchContent ?? obj.patch_content ?? obj.content;
+      if (typeof aliasPatch === 'string') obj.patch = aliasPatch;
+    }
+    delete obj.diff;
+    delete obj.patch_text;
+    delete obj.patchContent;
+    delete obj.patch_content;
+  }
+  if (toolName === 'web_fetch') {
+    if (obj.url === undefined) {
+      const aliasUrl = obj.target ?? obj.uri ?? obj.link;
+      if (typeof aliasUrl === 'string') obj.url = aliasUrl;
+    }
+    delete obj.target;
+    delete obj.uri;
+    delete obj.link;
+  }
+  if (toolName === 'web_search') {
+    if (obj.query === undefined) {
+      const aliasQ = obj.q ?? obj.search ?? obj.term;
+      if (typeof aliasQ === 'string') obj.query = aliasQ;
+    }
+    delete obj.q;
+    delete obj.search;
+    delete obj.term;
   }
   if (toolName === 'bash') {
     if (obj.command === undefined && obj.cmd !== undefined) {
@@ -525,6 +557,53 @@ export class ToolRegistry {
           signal.throwIfAborted();
           return this.files.fallbackSearch(input.query, input.path, signal);
         }
+      },
+    });
+    this.register('web_fetch', {
+      description: 'Fetch content from an HTTP or HTTPS URL and return it as markdown, text, or HTML. Markdown is the default. Enforces strict SSRF protection and redirects checking.',
+      schema: z.object({
+        url: z.string().url(),
+        format: z.enum(['markdown', 'text', 'html']).default('markdown'),
+      }),
+      readOnly: true,
+      execute: async (input, signal) => {
+        const result = await webFetch({
+          url: input.url,
+          format: input.format,
+          signal,
+          maxContentChars: 32_000,
+          approve: request => this.approve(request),
+          policy: this.policy
+            ? {
+                evaluate: (tool, resource) =>
+                  this.policy!({ tool, input: { url: resource } }),
+              }
+            : undefined,
+        });
+        return result.content || '[Empty response]';
+      },
+    });
+    this.register('web_search', {
+      description: 'Search the web using DuckDuckGo Lite, with keyless fallback to TinyFish and Parallel MCP. Returns current organic search results without needing an API key.',
+      schema: z.object({
+        query: z.string().min(1),
+      }),
+      readOnly: true,
+      execute: async (input, signal) => {
+        const result = await webSearch({
+          query: input.query,
+          signal,
+          policy: this.policy
+            ? {
+                evaluate: (tool, resource) =>
+                  this.policy!({ tool, input: { query: resource } }),
+              }
+            : undefined,
+        });
+        if (!result.results.length) return 'No search results found.';
+        return result.results
+          .map((r) => `## [${r.title}](${r.url})${r.date ? ` (${r.date})` : ''}\n\n${r.snippet}`)
+          .join('\n\n');
       },
     });
     this.register('todo_write', {
@@ -863,7 +942,8 @@ export class ToolRegistry {
       canonical === 'send_input' ||
       canonical === 'close_agent' ||
       canonical === 'resume_agent' ||
-      canonical === 'sequential_thinking'
+      canonical === 'sequential_thinking' ||
+      canonical === 'view_image'
     ) {
       return false; // serialize state transitions
     }

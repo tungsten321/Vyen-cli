@@ -5,13 +5,9 @@ TypeScript 5.9 (strict, NodeNext) + Node ≥ 22.16 + AI SDK 6, packaged as the
 is supported.
 
 **The contract is `docs/SPEC.md`** — read it for what code promises. This file adds
-working agreements. Keep it short: loaded in prompts via `loadProjectInstructions`
-(`src/context.ts`), truncated at 24 000 characters; unenforced rules are harmful.
-
-**Budget: stay under 24 000 characters combined, with at least 1 000 to spare.**
-`loadProjectInstructions` truncates combined instructions (`AGENTS.md` + `AGENT_LEARNINGS.md`)
-at 24 000 and drops the middle. Keep $\ge 1,000$ spare. Fold lessons into rules or move
-background to `AGENT_LEARNINGS.md`.
+working agreements. Keep it short: loaded via `loadProjectInstructions` (`src/context.ts`),
+which truncates combined instructions (`AGENTS.md` + `AGENT_LEARNINGS.md`) at 24 000.
+**Budget: keep $\ge 1,000$ spare.** Fold lessons into rules or move background to `AGENT_LEARNINGS.md`.
 
 **Read only what this turn needs.** Plans in `docs/superpowers/plans/` are history,
 not input. Read this file, current plan, and touched spec sections.
@@ -30,10 +26,9 @@ npm test             # tsc build -> node --test tests/*.test.mjs
 Lint must report zero errors. Warnings are baseline; do not "fix" them and do not
 report them as findings.
 
-**Windows platform skips.** Five platform cases (POSIX mode bits and unprivileged
-symlinks: four in `tests/files.test.mjs`, one in `tests/audit.test.mjs`) are cleanly
-skipped on Windows (`process.platform === 'win32'`). With these skips, `npm test`
-must exit 0 on all supported platforms with zero failures.
+**Windows platform skips.** 5 platform cases (POSIX mode bits, unprivileged symlinks:
+4 in `tests/files.test.mjs`, 1 in `tests/audit.test.mjs`) are cleanly skipped on
+Windows (`process.platform === 'win32'`); `npm test` must exit 0 with 0 failures.
 
 **Checklist to report "done"** — every line is a condition that must hold, not a
 suggestion:
@@ -53,23 +48,23 @@ suggestion:
 
 The gate above only counts if the agent does not lower it.
 
-- **Do not lower the gate.** `@ts-ignore` banned; `@ts-expect-error` requires reason
-  on same line; no `as any` to silence `tsc`; no disabling lint rules; no `--no-verify`.
-  Fix code, not rules (`as any` and lint rules apply to new code; §6 forbids out-of-scope refactors).
+- **Do not lower the gate.** `@ts-ignore` banned; `@ts-expect-error` requires reason on same line; no `as any` to silence `tsc`; no disabling lint rules; no `--no-verify`. Fix code, not rules (§6 forbids out-of-scope refactors).
 - **Do not edit gatekeepers.** `tests/plan-traceability.test.mjs` and
   `tests/repo-hygiene.test.mjs` guard this file; editing them to pass failures is forbidden.
   *Exception:* deliberate rule changes must update the guard with commit explanation.
-- **Do not bend evidence.** Never report "verified" or "done" without running the command.
-  Report exact command output (e.g. `npm test` -> 248/249 green).
+- **Do not bend evidence.** Never report "verified" or "done" without running the command; report exact command output (e.g. `npm test` -> 248/249 green).
+- **No fake busy / thrashing.** Never churn files with superficial edits or loop on self-inflicted errors. Aim edits at root causes; if 2 consecutive attempts fail, stop and state the roadblock.
 - **Destructive commands.** No `git reset --hard`, `git checkout -- .`, `git restore .`,
   `git clean -fd`, `git push --force` without asking first; never touch uncommitted changes outside scope.
-- **Secrets & Config.** Never print keys into transcripts or commit `.env`/key files; keys
-  come from `VYEN_API_KEY` or `~/.config/vyen/credentials.json`. Redaction in `src/errors.ts`.
-  Missing `~/.config/vyen/` or credentials/memories bootstrap on demand; never crash when absent.
+- **Secrets & Config.** Never print keys or commit `.env`/key files; keys come from `VYEN_API_KEY` or `~/.config/vyen/credentials.json`. Missing config or credentials/memories bootstrap on demand; never crash when absent.
 
-### 1.2 Speculative hardening
+### 1.2 Speculative hardening & defensive code
 
-Explain breaks, probability, and added complexity before writing edge-case code; obtain approval before widening diff scope. Never weaken security, path, or permission invariants.
+Explain breaks, probability, and added complexity before writing edge-case code; obtain approval before widening diff scope. Never weaken security, path, or permission invariants (§3.3).
+
+- **Boundary validation:** Validate unknown input once at the owning boundary (schema, CLI, I/O) and pass typed values inward; never revalidate schema-guaranteed values or internal types with redundant runtime checks.
+- **No premature helpers:** Inline single-use logic at the call site; do not extract one-off helpers unless reused, hiding a complex boundary, or clarifying the caller (reuse existing per §6).
+- **Avoid defensive `try`/`catch`:** Let errors fail fast to central boundary handlers; never wrap internal logic in `try`/`catch` to swallow errors or return `null` without a local recovery strategy.
 
 ## 2. New tests must be proven RED before the fix
 
@@ -196,6 +191,7 @@ user deny rules or audit hooks.
 - **Trust coverage:** `calculateWorkspaceTrustHash` must cover all local scripts
   and executables referenced in `permissions.allow`, hashing non-existent targets
   as `file:<path>:missing`.
+- **Adversarial verification:** For auth, permission or policy changes, act as the attacker: simulate bypasses, parameter tampering, and privilege escalation with concrete exploit payloads; verify every attempt fails closed before claiming done.
 
 ### 3.4 Session lifecycle touches the store, not transient harnesses
 
@@ -312,6 +308,7 @@ caller in turn to "make it work".
 | Provider adapters (OpenAI / Responses / Anthropic) | `src/provider.ts` |
 | Files: path safety, backups, diffs, apply_patch | `src/files.ts` |
 | Shell execution and process groups | `src/process.ts` |
+| Web tools: SSRF, DNS pinning, search fallback | `src/web.ts` |
 | MCP clients, tools, presets, and memory | `src/mcp.ts`, `src/mcp-presets.ts`, `src/memory.ts` |
 | Subagents | `src/subagents.ts` |
 | Reasoning projection | `src/reasoning.ts` |

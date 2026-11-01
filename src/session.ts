@@ -317,8 +317,8 @@ export function retargetSessionWorkspace(store: SessionStore, nextCwd: string): 
 }
 
 export function sameWorkspace(a: string, b: string): boolean {
-  const na = a.normalize('NFC').replace(/[\\/]+$/, '');
-  const nb = b.normalize('NFC').replace(/[\\/]+$/, '');
+  const na = a.normalize('NFC').replace(/[\\/]+$/, '').replace(/\\/g, '/');
+  const nb = b.normalize('NFC').replace(/[\\/]+$/, '').replace(/\\/g, '/');
   return process.platform === 'win32' ? na.toLowerCase() === nb.toLowerCase() : na === nb;
 }
 

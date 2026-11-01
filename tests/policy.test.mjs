@@ -239,6 +239,14 @@ test('tool aliases are normalized in policy matching', () => {
   // read alias matches read_file
   assert.equal(evaluateToolPolicy({ tool: 'read_file', input: { path: 'docs/guide.md' } }, ctx), 'allow');
   assert.equal(evaluateToolPolicy({ tool: 'read', input: { path: 'docs/guide.md' } }, ctx), 'allow');
+
+  // web_fetch string input policy matching
+  assert.equal(
+    evaluateToolPolicy({ tool: 'web_fetch', input: 'https://evil.internal/api' }, {
+      projectRules: { deny: ['web_fetch(domain:*.internal)'] },
+    }),
+    'deny',
+  );
 });
 
 test('bare bash allow rules reject chained or compound commands', () => {

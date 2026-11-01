@@ -136,3 +136,9 @@ test('sequential_thinking normalizes snake_case aliases from model calls', async
   assert.equal(parsed.nextThoughtNeeded, true);
   assert.equal(parsed.branchId, 'test-branch');
 });
+
+test('view_image returns false for canBatchParallel to prevent concurrent pendingImages race', async t => {
+  const f = await fixture(t);
+  const registry = new ToolRegistry(f.cwd, async () => false);
+  assert.equal(registry.canBatchParallel('view_image'), false);
+});

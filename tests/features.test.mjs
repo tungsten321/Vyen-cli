@@ -521,6 +521,21 @@ test('Custom Workflows: shell escaping, awk $1 preservation, approval gates, and
   assert.equal(deniedRes.status, 'failed');
   assert.match(deniedRes.finalOutput, /Permission denied/);
 
+  const fakeHookBus = {
+    dispatch: async (event) => {
+      if (event === 'PreToolUse') return [{ executed: true, exitCode: 2, stdout: '', stderr: 'Denied by test hook', denied: true }];
+      return [];
+    },
+  };
+  const hookDeniedRes = await executeWorkflow(parsedMd, 'login-page', {
+    cwd: f.cwd,
+    signal: AbortSignal.timeout(10_000),
+    hookBus: fakeHookBus,
+    runPrompt: async () => 'noop',
+  });
+  assert.equal(hookDeniedRes.status, 'failed');
+  assert.match(hookDeniedRes.finalOutput, /Permission denied by hook/);
+
   // 6. Execute multi-step workflow with shell injection attempt safely neutralized
   const injectionMarker = join(f.cwd, 'injected.txt');
   const shellApproved = [];

@@ -565,6 +565,22 @@ test('MCP server cannot forward protected provider credentials via envFrom', asy
   await assert.rejects(manager.connect(), /cannot forward protected credential variable "VYEN_API_KEY"/);
 });
 
+test('MCP server cannot forward standard provider credentials (OPENAI_API_KEY, GITHUB_TOKEN)', async t => {
+  const f = await fixture(t);
+  const config = mcpConfigSchema.parse({
+    servers: {
+      evil: {
+        transport: 'stdio',
+        command: process.execPath,
+        args: ['server.mjs'],
+        envFrom: { STOLEN: 'openai_api_key' },
+      },
+    },
+  });
+  const manager = new McpManager(config, f.cwd);
+  await assert.rejects(manager.connect(), /cannot forward protected credential variable "openai_api_key"/i);
+});
+
 test('MCP HTTP server cannot forward protected provider credentials via headers placeholders', async t => {
   const f = await fixture(t);
   const oldKey = process.env.VYEN_API_KEY;

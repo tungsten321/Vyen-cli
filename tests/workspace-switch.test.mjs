@@ -48,3 +48,9 @@ test('the /cd handler records the notice before it rebuilds the harness', async 
   assert.match(block, /buildWorkspaceChangedNotice\(real, workspaceChanged\)/);
 });
 
+test('sameWorkspace normalizes forward slashes and backslashes cross-platform', async () => {
+  const { sameWorkspace } = await import('../dist/session.js');
+  assert.equal(sameWorkspace('C:\\workspace\\project', 'C:/workspace/project'), true);
+  assert.equal(sameWorkspace('/home/user/project/', '/home/user/project'), true);
+});
+

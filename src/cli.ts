@@ -1293,7 +1293,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
           subagents = undefined;
         }
         if (!values['no-subagents']) {
-          subagents = new Subagents(runtime, store, reg, emit, hookBus);
+          subagents = new Subagents(runtime, store, reg, emit, hookBus, trust.isTrusted);
           subagents.register();
         }
         const { KnowledgeGraphManager } = await import('./memory.js');
@@ -1321,6 +1321,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
               const res = await executeWorkflow(wf, input.input, {
                 cwd: runtime.cwd,
                 signal,
+                hookBus,
                 effectiveReadOnly: reg.effectiveReadOnly,
                 approveShell: (command, stepSig) =>
                   reg.approve({ tool: 'bash', input: { command }, signal: stepSig }),
@@ -3440,6 +3441,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
               const wfRes = await executeWorkflow(matched, wfArgs, {
                 cwd: runtime.cwd,
                 signal: controller.signal,
+                hookBus: harness.hookBus,
                 effectiveReadOnly: tools.effectiveReadOnly,
                 approveShell: (command, stepSig) =>
                   tools.approve({ tool: 'bash', input: { command }, signal: stepSig }),
@@ -3784,6 +3786,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
           activeHarness.hookBus.onWarning = warning => stderr.write(`[Hook warning]: ${warning}\n`);
         }
         await activeHarness?.endSession().catch(() => {});
+        await store.discardIfEmpty();
         await store.close();
         if (process.connected) {
           try { process.disconnect(); } catch { /* ignore */ }

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   KnowledgeGraphManager,
@@ -63,6 +64,48 @@ test('KnowledgeGraphManager migrates legacy memories.json into global_user_memor
   const userEntity = graph.entities.find(e => e.name === 'global_user_memory');
   assert.ok(userEntity, 'Must create global_user_memory entity');
   assert.deepEqual(userEntity.observations, ['prefer typescript', 'use tabs']);
+});
+
+test('readGraph in read-only mode does not write to disk during legacy migration', async t => {
+  const f = await fixture(t);
+  const legacyFile = join(f.cwd, 'memories.json');
+  const graphFile = join(f.cwd, 'knowledge-graph.jsonl');
+
+  await writeFile(legacyFile, JSON.stringify(['prefer typescript']), 'utf8');
+
+  const manager = new KnowledgeGraphManager({
+    userGraphPath: graphFile,
+    legacyMemoryPath: legacyFile,
+    readOnly: true,
+  });
+
+  const graph = await manager.readGraph('user');
+  const userEntity = graph.entities.find(e => e.name === 'global_user_memory');
+  assert.ok(userEntity, 'In-memory graph should contain migrated entity');
+  assert.equal(existsSync(graphFile), false, 'Must not write to disk in read-only mode');
+});
+
+test('readGraph prevents disk write when planMode is activated dynamically after registerTools', async t => {
+  const f = await fixture(t);
+  const legacyFile = join(f.cwd, 'memories.json');
+  const graphFile = join(f.cwd, 'knowledge-graph.jsonl');
+
+  await writeFile(legacyFile, JSON.stringify(['prefer typescript']), 'utf8');
+
+  const manager = new KnowledgeGraphManager({
+    userGraphPath: graphFile,
+    legacyMemoryPath: legacyFile,
+  });
+
+  const registry = new ToolRegistry(f.cwd, async () => true, false);
+  manager.registerTools(registry);
+  // Dynamically enter plan mode (e.g. /plan)
+  registry.planMode = true;
+
+  const graph = await manager.readGraph('user');
+  const userEntity = graph.entities.find(e => e.name === 'global_user_memory');
+  assert.ok(userEntity, 'In-memory graph should contain migrated entity');
+  assert.equal(existsSync(graphFile), false, 'Must not write to disk when planMode is dynamically enabled');
 });
 
 test('KnowledgeGraph tools registered on ToolRegistry allow CRUD operations', async t => {

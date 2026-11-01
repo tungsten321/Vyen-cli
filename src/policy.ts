@@ -161,12 +161,18 @@ function normalizePathForMatching(raw: string, cwd = process.cwd(), platform = p
 }
 
 function extractToolArgumentString(tool: string, input: unknown, cwd?: string, platform = process.platform): string {
-  if (typeof input === 'string') return tool === 'bash' ? input.trim() : normalizePathForMatching(input, cwd, platform);
+  if (typeof input === 'string') {
+    return (tool === 'bash' || tool === 'web_fetch' || tool === 'web_search')
+      ? input.trim()
+      : normalizePathForMatching(input, cwd, platform);
+  }
   if (!input || typeof input !== 'object') return '';
   const obj = input as Record<string, unknown>;
   if (typeof obj.command === 'string') return obj.command.trim();
   if (typeof obj.path === 'string') return normalizePathForMatching(obj.path, cwd, platform);
   if (typeof obj.file_path === 'string') return normalizePathForMatching(obj.file_path, cwd, platform);
+  if (typeof obj.url === 'string') return obj.url.trim();
+  if (typeof obj.query === 'string') return obj.query.trim();
   return JSON.stringify(input);
 }
 
@@ -249,6 +255,22 @@ export function matchToolPattern(
         if (cleaned.texts.some(text => matchSimplePattern(rawArgPattern, text))) return true;
       }
       return false;
+    }
+    if (canonicalRequestTool === 'web_fetch') {
+      if (rawArgPattern.startsWith('domain:')) {
+        const domainPattern = rawArgPattern.slice(7).trim().replace(/\.$/, '');
+        try {
+          // A trailing dot is the same DNS name; strip it so a rule cannot be bypassed.
+          const host = new URL(argStr).hostname.replace(/\.$/, '');
+          return matchSimplePattern(domainPattern, host);
+        } catch {
+          return false;
+        }
+      }
+      return matchSimplePattern(rawArgPattern, argStr);
+    }
+    if (canonicalRequestTool === 'web_search') {
+      return matchSimplePattern(rawArgPattern, argStr);
     }
     const isPathCaseSensitive = platform !== 'win32';
     const normalizedPattern = normalizePathForMatching(rawArgPattern, options.cwd, platform);

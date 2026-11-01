@@ -31,20 +31,32 @@ tools and persistence. No ZCode runtime source is copied or loaded.
   OpenAI Responses, Anthropic Messages. Three retries; configurable request timeout.
 - Tools own file/shell I/O. File paths resolve within the real workspace;
   symlink escapes fail. Existing files must be read before overwrite/edit;
-  changed revisions are rejected. Shell commands require approval and execute
-  as the current user, without an OS sandbox. Read-only mode omits all mutations
-  and shell. --yes (or interactive /auto, /yolo) explicitly authorizes them without prompts. Project settings
-  in `.vyen/settings.json` define permissions (`allow`, `ask`, `deny`) and lifecycle
-  `hooks` (`SessionStart`, `SessionEnd`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`,
-  `PostToolUseFailure`, `PreCompact`, `Stop`). Hooks receive a JSON payload on stdin with
-  `event`, `sessionId`, `timestamp`, `cwd` and event-specific fields in a sanitized
-  environment; exit 2 denies tool execution, exit 0 injects stdout context,
-  and project hooks require workspace trust hash verification (opt in via --trust-workspace).
-  Subagents maintain their own child SessionStore and invoke endSession() on cleanup.
-  Nested ephemeral runners (Agent Network rounds, workflow steps with sessionLifecycle: false)
-  inherit tool hooks but do not emit global `SessionStart`/`SessionEnd`. CLI flags
-  `--allowed-tools` and `--disallowed-tools` override layered settings. User deny
-  cannot be widened by project rules; deny rules take effect even in auto mode.
+  changed revisions are rejected. Web tools (`web_fetch`, `web_search`) provide
+  read-only external access behind policy controls: `web_fetch` enforces strict
+  SSRF defense by rejecting loopback, RFC 1918 private, link-local, and cloud metadata
+  addresses, resolves every host and pins the validated address set to the connection
+  to eliminate DNS rebinding while preserving IPv4/IPv6 fallback, and re-validates
+  safety and domain policy after every 3xx redirect up to 5 hops; a redirect target
+  that requires approval (`ask`) is fetched only after approval and otherwise fails
+  closed. A request has a 30-second total deadline, a 5MB payload cap, and converts
+  HTML to Markdown only when the response is HTML; non-HTML text is returned as-is and
+  binary types are rejected. Content handed to the model is capped at 32,000 characters.
+  `web_search` queries DuckDuckGo Lite and automatically falls back to keyless
+  MCP endpoints (TinyFish, Parallel) without requiring an API key or external credentials.
+  Policy rules support `domain:<pattern>` matching for allow, ask, and deny enforcement
+  on `web_fetch` URLs; `web_search` rules match the query text.
+  Shell commands require approval and execute as the current user, without an OS sandbox.
+  Read-only mode omits all mutations and shell. --yes (or interactive /auto, /yolo) explicitly
+  authorizes them without prompts. Project settings in `.vyen/settings.json` define permissions
+  (`allow`, `ask`, `deny`) and lifecycle `hooks` (`SessionStart`, `SessionEnd`, `UserPromptSubmit`,
+  `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PreCompact`, `Stop`). Hooks receive a JSON
+  payload on stdin with `event`, `sessionId`, `timestamp`, `cwd` and event-specific fields in a sanitized
+  environment; exit 2 denies tool execution, exit 0 injects stdout context, and project hooks
+  require workspace trust hash verification (opt in via --trust-workspace). Subagents maintain
+  their own child SessionStore and invoke endSession() on cleanup. Nested ephemeral runners
+  (Agent Network rounds, workflow steps with sessionLifecycle: false) inherit tool hooks but do not
+  emit global `SessionStart`/`SessionEnd`. CLI flags `--allowed-tools` and `--disallowed-tools` override
+  layered settings. User deny cannot be widened by project rules; deny rules take effect even in auto mode.
 - Headless automation supports `--output-format stream-json|text` (`--json` aliases to `stream-json`). The `stream-json` stream emits versioned `v1` NDJSON events starting with `session` (`version: 'v1'`) once a session exists; a startup failure such as an invalid or unreadable `--json-schema` emits a single `error` event before any session is created. Callers enforce structured final output via `--json-schema`; output is validated with ajv and attached to `done.structuredOutput`. Missing schema files, invalid schema syntax, an Ajv-invalid schema, or model output violating the schema fail closed with exit code 1 and emit an `error` event. Unattended runs can cap consumption with `--run-token-budget`.
 - Local audit log records tool decisions (tool name, decision: allow/deny/ask_approved/ask_denied, durationMs, tokens, errorClass) and remote pair lifecycle events (session_start, session_stop, remote_approve, remote_deny with origin) into daily JSONL files under `$XDG_DATA_HOME/vyen/audit/` (`audit-YYYY-MM-DD.jsonl`) with 10MB chunk rotation (`audit-YYYY-MM-DD.<index>.jsonl`). Audit writes execute asynchronously off the critical path. File contents, user prompts, and configured API keys are never written to audit records; logging is disabled completely when `VYEN_AUDIT=off`.
 - Help/init/doctor/sessions/upgrade perform no model request. No account login,
