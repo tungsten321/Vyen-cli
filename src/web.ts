@@ -58,12 +58,29 @@ export interface WebSearchOptions {
 }
 
 /**
+ * Normalizes an IP address, converting uncompressed IPv6 representations to canonical RFC 5952 form.
+ */
+export function normalizeIp(ip: string): string {
+  const clean = ip.replace(/^\[|\]$/g, '').trim().toLowerCase();
+  if (net.isIPv6(clean)) {
+    try {
+      const canonical = new URL(`http://[${clean}]`).hostname;
+      return canonical.replace(/^\[|\]$/g, '');
+    } catch {
+      return clean;
+    }
+  }
+  return clean;
+}
+
+/**
  * Validates if an IP address is private, loopback, link-local, or cloud metadata.
  */
 export function isPrivateIp(ip: string): boolean {
-  if (!net.isIP(ip)) return false;
+  const clean = normalizeIp(ip);
+  if (!net.isIP(clean)) return false;
 
-  const lower = ip.toLowerCase();
+  const lower = clean;
 
   // IPv4-mapped IPv6 (::ffff:127.0.0.1, ::ffff:7f00:1, 0:0:0:0:0:ffff:...)
   if (lower.startsWith('::ffff:') || lower.startsWith('0:0:0:0:0:ffff:')) {
@@ -156,7 +173,7 @@ export function isPrivateIp(ip: string): boolean {
  * Checks if an IP is loopback.
  */
 export function isLoopbackIp(ip: string): boolean {
-  const clean = ip.replace(/^\[|\]$/g, '').toLowerCase();
+  const clean = normalizeIp(ip);
   if (clean === '::1' || clean === '0:0:0:0:0:0:0:1') return true;
   if (clean.startsWith('::ffff:')) {
     const v4 = clean.slice(7);
@@ -255,19 +272,23 @@ export function convertHtmlToMarkdown(html: string): string {
   text = text.replace(/<noscript\b[\s\S]*?<\/noscript>/gi, '');
   text = text.replace(/<svg\b[\s\S]*?<\/svg>/gi, '');
 
-  // Convert headings
-  text = text.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '\n# $1\n');
-  text = text.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '\n## $1\n');
-  text = text.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '\n### $1\n');
-  text = text.replace(/<h4[^>]*>(.*?)<\/h4>/gi, '\n#### $1\n');
+  // Convert headings (multiline-safe)
+  text = text.replace(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/gi, (_, l, c) => `\n${'#'.repeat(Number(l))} ${c.trim()}\n`);
 
-  // Convert links
-  text = text.replace(/<a\s+(?:[^>]*?\s+)?href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gi, '[$2]($1)');
+  // Convert links (multiline-safe)
+  text = text.replace(/<a\s+(?:[^>]*?\s+)?href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (_, href, content) => `[${content.trim()}](${href})`);
 
-  // Convert blockquotes and paragraphs
-  text = text.replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, '\n> $1\n');
-  text = text.replace(/<p[^>]*>(.*?)<\/p>/gi, '\n$1\n');
+  // Convert list items
+  text = text.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, '\n- $1');
+
+  // Convert blockquotes and paragraphs (multiline-safe)
+  text = text.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, '\n> $1\n');
+  text = text.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, '\n$1\n');
   text = text.replace(/<br\s*\/?>/gi, '\n');
+
+  // Separate block containers and table cells before stripping remaining tags
+  text = text.replace(/<\/(?:div|tr|section|article|nav|header|footer|main|aside|ul|ol)>/gi, '\n');
+  text = text.replace(/<\/(?:td|th)>/gi, ' ');
 
   // Strip remaining HTML tags
   text = text.replace(/<[^>]+>/g, '');
@@ -516,6 +537,9 @@ export async function webSearch(options: WebSearchOptions): Promise<WebSearchRes
     if (decision === 'deny') {
       throw new Error(`Web search for "${query}" is denied by policy.`);
     }
+    if (decision === 'ask') {
+      throw new Error(`Web search for "${query}" requires approval by policy.`);
+    }
   }
 
   const createEngineSignal = (timeoutMs = 10_000): AbortSignal => {
@@ -641,7 +665,9 @@ export async function webSearch(options: WebSearchOptions): Promise<WebSearchRes
       results = (parsed?.results ?? []).map((item) => ({
         title: String(item.title ?? item.url ?? ''),
         url: String(item.url ?? ''),
-        snippet: Array.isArray(item.excerpts) ? item.excerpts.join('\n\n') : '',
+        snippet: Array.isArray(item.excerpts)
+          ? item.excerpts.join('\n\n')
+          : String(item.snippet ?? item.description ?? ''),
       }));
     }
 

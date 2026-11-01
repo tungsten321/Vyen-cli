@@ -3,11 +3,13 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import {
   isPrivateIp,
+  isLoopbackIp,
   resolveSafeIp,
   webFetch,
   webSearch,
   parseDuckDuckGoLiteHtml,
   unescapeHtml,
+  convertHtmlToMarkdown,
   MAX_RESPONSE_BYTES,
   MAX_REDIRECTS,
 } from '../dist/web.js';
@@ -435,4 +437,41 @@ test('web_search falls back to Parallel keyless when DuckDuckGo and TinyFish fai
   assert.equal(result.provider, 'parallel');
   assert.equal(result.results.length, 1);
   assert.equal(result.results[0].title, 'Parallel TS');
+});
+test('isPrivateIp and isLoopbackIp recognize uncompressed IPv6 addresses with leading zeros', () => {
+  assert.equal(isPrivateIp('0000:0000:0000:0000:0000:0000:0000:0001'), true, 'uncompressed IPv6 loopback');
+  assert.equal(isLoopbackIp('0000:0000:0000:0000:0000:0000:0000:0001'), true, 'uncompressed IPv6 loopback');
+  assert.equal(isPrivateIp('0000:0000:0000:0000:0000:ffff:127.0.0.1'), true, 'uncompressed IPv4-mapped loopback');
+  assert.equal(isPrivateIp('0000:0000:0000:0000:0000:0000:0000:0000'), true, 'uncompressed IPv6 unspecified');
+  assert.equal(isPrivateIp('fd00:0000:0000:0000:0000:0000:0000:0001'), true, 'uncompressed IPv6 ULA');
+  assert.equal(isPrivateIp('fe80:0000:0000:0000:0000:0000:0000:0001'), true, 'uncompressed IPv6 link-local');
+});
+
+test('convertHtmlToMarkdown separates block elements and supports multiline tags', () => {
+  const listHtml = '<ul><li>First item</li><li>Second item</li></ul>';
+  assert.equal(convertHtmlToMarkdown(listHtml), '- First item\n- Second item');
+
+  const divHtml = '<div>Block 1</div><div>Block 2</div>';
+  assert.equal(convertHtmlToMarkdown(divHtml), 'Block 1\nBlock 2');
+
+  const tableHtml = '<table><tr><td>Cell 1</td><td>Cell 2</td></tr></table>';
+  assert.equal(convertHtmlToMarkdown(tableHtml), 'Cell 1 Cell 2');
+
+  const multilineHeading = '<h1>First Line\nSecond Line</h1>';
+  assert.equal(convertHtmlToMarkdown(multilineHeading), '# First Line\nSecond Line');
+
+  const multilineLink = '<a href="https://example.com">\nLink Text\n</a>';
+  assert.equal(convertHtmlToMarkdown(multilineLink), '[Link Text](https://example.com)');
+});
+
+test('webSearch standalone policy check rejects ask decision', async () => {
+  await assert.rejects(
+    webSearch({
+      query: 'secret term',
+      policy: {
+        evaluate: () => 'ask',
+      },
+    }),
+    /approval|policy/i,
+  );
 });
