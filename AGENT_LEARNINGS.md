@@ -54,3 +54,12 @@ Loaded by `loadProjectInstructions` in `src/context.ts`. Append empirical lesson
 ## 14. Custom `lookup` Honors Node `all` Contract
 - Node ≥20 with `autoSelectFamily` calls `lookup(host, { all: true }, cb)` expecting `{ address, family }[]`. Custom lookup must branch on `options.all` and return `dns.LookupAddress[]`.
 - **Guard:** `tests/web.test.mjs` › "web_fetch fetches a hostname through the pinned lookup contract".
+
+## 15. SSRF Documentation Range Coverage
+- **Seen (2026-11-01):** `isPrivateIp` blocked IPv4 test ranges but missed IPv6 doc range `2001:db8::/32` (RFC 3849).
+- **Guard:** `tests/web.test.mjs` › "web_fetch refuses requests to private and metadata IP addresses (SSRF)".
+
+## 16. Paired Element Parsing Over Flat Arrays
+- **Seen (2026-11-01):** Parallel index arrays broke when ads lacked snippets, misaligning organic results.
+- **Rule:** Match paired HTML nodes by DOM proximity, never assume 1-to-1 index alignment across separate query matches.
+- **Guard:** `tests/web.test.mjs` › "parseDuckDuckGoLiteHtml handles ads without snippets without misaligning organic results".
