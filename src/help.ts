@@ -25,7 +25,7 @@ Options:
       --resume ID|latest     Resume a saved session in this workspace
       --pair                Start Cloudflared tunnel + QR device pairing on launch
       --yes                 Approve file changes and shell commands automatically
-      --read-only           Read tools and research agents; no writes or shell
+      --read-only           Read tools (files, search, web_fetch, web_search); no writes or shell
       --output-format FORMAT stream-json | text (default: text, or stream-json with --json)
       --json-schema SCHEMA   JSON Schema (inline string or file path) for structured final output
       --json                Emit NDJSON events (alias for --output-format stream-json)

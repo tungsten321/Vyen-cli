@@ -15,6 +15,11 @@ export interface WebFetchOptions {
   maxRedirects?: number;
   /** Cap the content handed to the caller (the model context), not the download. */
   maxContentChars?: number;
+  /**
+   * Policy evaluator for domain-level access control.
+   * Note: The first hop is assumed to be evaluated/approved by the caller (e.g. ToolRegistry);
+   * subsequent redirect hops are re-evaluated here and require `approve` callback if 'ask'.
+   */
   policy?: { evaluate?: (tool: string, resource: string) => PolicyDecision };
   /** Asked when a redirect target needs user approval; no callback means deny. */
   approve?: (request: { tool: string; input: unknown; signal: AbortSignal }) => Promise<boolean>;
@@ -61,6 +66,7 @@ export interface WebSearchOptions {
 
 /**
  * Normalizes an IP address, converting uncompressed IPv6 representations to canonical RFC 5952 form.
+ * Uses new URL('http://[<ip>]') as a standard-compliant, zero-dependency parser for IPv6 canonicalization.
  */
 export function normalizeIp(ip: string): string {
   const clean = ip.trim().replace(/^\[|\]$/g, '').trim().toLowerCase();
@@ -154,6 +160,8 @@ export function isPrivateIp(ip: string): boolean {
   if (normalized.startsWith('ff')) return true;
   // 2002::/16 (6to4) and 64:ff9b::/96 (NAT64)
   if (normalized.startsWith('2002:') || normalized.startsWith('64:ff9b:')) return true;
+  // 2001:db8::/32 (Documentation range, RFC 3849)
+  if (normalized.startsWith('2001:db8:') || normalized.startsWith('2001:0db8:')) return true;
   // Deprecated IPv4-compatible form (::127.0.0.1 or ::7f00:1)
   if (normalized.startsWith('::')) {
     const rest = normalized.slice(2);
@@ -315,20 +323,44 @@ export function parseDuckDuckGoLiteHtml(html: string): WebSearchResultItem[] {
   const linkRegex = /<a\s+(?:[^>]*?\s+)?href=['"]([^'"]+)['"](?:\s+[^>]*?)?class=['"]result-link['"][^>]*>([\s\S]*?)<\/a>|<a\s+(?:[^>]*?\s+)?class=['"]result-link['"](?:\s+[^>]*?)?href=['"]([^'"]+)['"][^>]*>([\s\S]*?)<\/a>/gi;
   const snippetRegex = /<td[^>]+class=['"]result-snippet['"][^>]*>([\s\S]*?)<\/td>/gi;
 
-  const links = [...html.matchAll(linkRegex)].map((m) => ({
+  const rawLinks = [...html.matchAll(linkRegex)].map((m) => ({
     href: unescapeHtml(m[1] || m[3]),
     text: unescapeHtml((m[2] || m[4]).replace(/<[^>]+>/g, '').trim()),
+    index: m.index ?? 0,
+    endIndex: (m.index ?? 0) + m[0].length,
   }));
 
-  const snippets = [...html.matchAll(snippetRegex)].map((m) =>
-    unescapeHtml(m[1].replace(/<[^>]+>/g, '').trim()),
-  );
+  const rawSnippets = [...html.matchAll(snippetRegex)].map((m) => ({
+    text: unescapeHtml(m[1].replace(/<[^>]+>/g, '').trim()),
+    index: m.index ?? 0,
+  }));
 
-  const count = Math.min(links.length, snippets.length);
-  for (let i = 0; i < count; i++) {
-    const link = links[i];
-    // Keep the index aligned with snippets, but never return ads or help links.
+  // When counts differ (e.g. ad link without snippet), associate snippets by document proximity
+  const snippetByLinkIndex = new Map<number, string>();
+  if (rawLinks.length !== rawSnippets.length && rawSnippets.length > 0) {
+    for (const snippet of rawSnippets) {
+      let closestLinkIndex = -1;
+      for (let i = 0; i < rawLinks.length; i++) {
+        if (rawLinks[i].endIndex <= snippet.index) {
+          closestLinkIndex = i;
+        } else {
+          break;
+        }
+      }
+      if (closestLinkIndex >= 0) {
+        snippetByLinkIndex.set(closestLinkIndex, snippet.text);
+      }
+    }
+  }
+
+  const total = rawLinks.length;
+  for (let i = 0; i < total; i++) {
+    const link = rawLinks[i];
     if (!link.href || isDuckDuckGoAd(link.href)) continue;
+
+    const snippet = rawLinks.length === rawSnippets.length
+      ? (rawSnippets[i]?.text ?? '')
+      : (snippetByLinkIndex.get(i) ?? '');
 
     let url = link.href;
     const uddgMatch = url.match(/uddg=([^&]+)/);
@@ -341,7 +373,7 @@ export function parseDuckDuckGoLiteHtml(html: string): WebSearchResultItem[] {
     results.push({
       title: link.text,
       url,
-      snippet: snippets[i],
+      snippet,
     });
   }
 
@@ -673,6 +705,10 @@ export async function webSearch(options: WebSearchOptions): Promise<WebSearchRes
           ? item.excerpts.join('\n\n')
           : String(item.snippet ?? item.description ?? ''),
       }));
+    }
+
+    if (results.length === 0) {
+      throw new Error('Parallel keyless returned zero results.');
     }
 
     return {

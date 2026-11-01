@@ -12,6 +12,7 @@ test('help lists the documented flags and subcommands', () => {
     '--allowed-tools', '--disallowed-tools', '--trust-workspace',
     'vyen setup', 'vyen mcp list', 'vyen upgrade',
     '/yolo',
+    'web_fetch', 'web_search',
   ]) assert.ok(HELP.includes(token), token);
   assert.match(HELP, /--no-subagents\s+.*Agent Network/, '--no-subagents description must mention Agent Network');
 });

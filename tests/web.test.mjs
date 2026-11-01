@@ -35,6 +35,8 @@ test('web_fetch refuses requests to private and metadata IP addresses (SSRF)', a
   assert.equal(isPrivateIp('fd12:3456:789a::1'), true, 'IPv6 unique local');
   assert.equal(isPrivateIp('fe80::1'), true, 'IPv6 link-local');
   assert.equal(isPrivateIp('fec0::1'), true, 'IPv6 site-local deprecated');
+  assert.equal(isPrivateIp('2001:db8::1'), true, 'IPv6 RFC 3849 documentation range');
+  assert.equal(isPrivateIp('2001:0db8:0000:0000:0000:0000:0000:0001'), true, 'IPv6 RFC 3849 uncompressed');
 
   // IPv4-mapped IPv6
   assert.equal(isPrivateIp('::ffff:127.0.0.1'), true, 'IPv4-mapped decimal loopback');
@@ -387,6 +389,20 @@ test('parseDuckDuckGoLiteHtml filters ads and unescapes hrefs', () => {
   assert.equal(parsed[0].snippet, 'Real snippet');
 });
 
+test('parseDuckDuckGoLiteHtml handles ads without snippets without misaligning organic results', () => {
+  const html = `
+    <tr><td><a href="https://duckduckgo.com/y.js?ad_domain=evil.example" class="result-link">Sponsored No Snippet</a></td></tr>
+    <tr><td><a href="https://example.com/organic" class="result-link">Organic Title</a></td></tr>
+    <tr><td class="result-snippet">Organic snippet text</td></tr>
+  `;
+
+  const parsed = parseDuckDuckGoLiteHtml(html);
+  assert.equal(parsed.length, 1, 'must return organic result even if preceding ad had no snippet');
+  assert.equal(parsed[0].title, 'Organic Title');
+  assert.equal(parsed[0].url, 'https://example.com/organic');
+  assert.equal(parsed[0].snippet, 'Organic snippet text');
+});
+
 test('web_fetch domain policy matches case-insensitively and ignores a trailing dot', () => {
   assert.equal(
     evaluateToolPolicy(
@@ -438,6 +454,20 @@ test('web_search falls back to Parallel keyless when DuckDuckGo and TinyFish fai
   assert.equal(result.results.length, 1);
   assert.equal(result.results[0].title, 'Parallel TS');
 });
+
+test('web_search throws aggregated error when all engines return zero results', async () => {
+  await assert.rejects(
+    webSearch({
+      query: 'nonexistent-query-xyz-123',
+      mockEngines: {
+        ddg: async () => [],
+        tinyfish: async () => [],
+        parallel: async () => [],
+      },
+    }),
+    /All web search engines failed.*zero results/i,
+  );
+});
 test('isPrivateIp and isLoopbackIp recognize uncompressed IPv6 addresses with leading zeros', () => {
   assert.equal(isPrivateIp('0000:0000:0000:0000:0000:0000:0000:0001'), true, 'uncompressed IPv6 loopback');
   assert.equal(isLoopbackIp('0000:0000:0000:0000:0000:0000:0000:0001'), true, 'uncompressed IPv6 loopback');
@@ -473,6 +503,18 @@ test('webSearch standalone policy check rejects ask decision', async () => {
       },
     }),
     /approval|policy/i,
+  );
+});
+
+test('webSearch standalone policy check rejects deny decision', async () => {
+  await assert.rejects(
+    webSearch({
+      query: 'forbidden query',
+      policy: {
+        evaluate: () => 'deny',
+      },
+    }),
+    /denied by policy/i,
   );
 });test('isPrivateIp recognizes bracketed and whitespace-padded IPv4 and IPv6 addresses', () => {
   assert.equal(isPrivateIp('[127.0.0.1]'), true, 'bracketed IPv4 loopback');

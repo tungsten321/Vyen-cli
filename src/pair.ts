@@ -415,6 +415,7 @@ export interface PendingRemoteApproval {
 export interface PairSessionInfo {
   running: boolean;
   port: number;
+  /** Sensitive auth token. Do not serialize or log in plain text. */
   token: string;
   localUrl: string;
   lanUrl: string;
@@ -521,6 +522,11 @@ function safeTokenEquals(candidate: string | null | undefined, expected: string)
   return timingSafeEqual(a, b);
 }
 
+/**
+ * Detects remote inputs that attempt privilege escalation (!cmd, /yolo, /auto, /mode auto).
+ * Note: Non-escalation slash commands (/cd, /revert, /delete) are neutralized downstream
+ * by the CLI dispatcher with allowCommands: false.
+ */
 export function isForbiddenRemoteInput(raw: string): boolean {
   const trimmed = raw.trim();
   if (!trimmed) return false;
