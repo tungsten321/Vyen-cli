@@ -3,21 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Vyen CLI — AI Coding Agent Cho Termux &amp; Đa Nền Tảng</title>
-  <meta name="description" content="CLI coding agent độc lập, ưu tiên Termux trên Android và đa nền tảng Linux, macOS, Windows. Sử dụng API key của riêng bạn, bảo mật phân tầng, subagents và MCP.">
+  <title>Vyen CLI — The Autonomous AI Coding Agent for Termux &amp; Cross-Platform</title>
+  <meta name="description" content="Nền tảng AI coding agent độc lập, hiệu năng cao, tối ưu hóa toàn diện cho Termux trên Android và đa nền tảng Linux, macOS, Windows. BYOK, bảo mật Fail-Closed, Subagents và MCP.">
   <link rel="canonical" href="https://vyen.nx.kg/">
-  <meta name="theme-color" content="#05070B">
+  <meta name="theme-color" content="#07090E">
 
-  <!-- Open Graph / Social Preview -->
+  <!-- Open Graph / Social Metadata -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Vyen CLI — AI Coding Agent Cho Termux &amp; Đa Nền Tảng">
-  <meta property="og:description" content="CLI coding agent độc lập, siêu nhẹ, ưu tiên Termux trên Android và đa nền tảng Linux, macOS, Windows. BYOK, bảo mật phân tầng, subagents và MCP.">
+  <meta property="og:title" content="Vyen CLI — Autonomous AI Coding Agent">
+  <meta property="og:description" content="AI coding agent độc lập, hiệu năng cao. Hỗ trợ ưu tiên Termux trên Android, Linux, macOS, Windows. BYOK, kiến trúc bảo mật phân tầng Fail-Closed và hệ sinh thái MCP.">
   <meta property="og:url" content="https://vyen.nx.kg/">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Vyen CLI — AI Coding Agent Cho Termux &amp; Đa Nền Tảng">
-  <meta name="twitter:description" content="CLI coding agent độc lập, ưu tiên Termux trên Android và đa nền tảng. Sử dụng API key của riêng bạn.">
+  <meta name="twitter:title" content="Vyen CLI — Autonomous AI Coding Agent">
+  <meta name="twitter:description" content="Independent, high-performance terminal coding agent. First-class Termux, Linux, macOS, Windows support. BYOK &amp; Fail-Closed security.">
 
   <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 
   <!-- Structured Data JSON-LD (SoftwareApplication) -->
@@ -33,18 +34,18 @@
       "price": "0",
       "priceCurrency": "USD"
     },
-    "description": "Independent AI coding agent CLI for Termux and cross-platform terminal workflows.",
+    "description": "High-performance autonomous terminal coding agent optimized for Termux and cross-platform developer workflows.",
     "softwareVersion": "0.5.0",
     "license": "https://github.com/tungsten321/Vyen-cli/blob/master/LICENSE"
   }
   </script>
 
-  <!-- Google Fonts: Geist & JetBrains Mono -->
+  <!-- Typography: Inter, Plus Jakarta Sans & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS CDN -->
+  <!-- Tailwind CSS Engine -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -52,63 +53,79 @@
       theme: {
         extend: {
           colors: {
-            emerald: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
               400: '#34d399',
               500: '#10b981',
               600: '#059669',
+              accent: '#06b6d4'
             },
-            cyan: {
-              400: '#22d3ee',
-              500: '#06b6d4',
-            },
-            oled: {
-              bg: '#05070B',
-              surface: '#0B0F19',
-              card: '#101625',
-              border: '#1A2338',
-              hover: '#222F4C'
+            surface: {
+              bg: '#07090E',
+              subtle: '#0B0F19',
+              card: '#101726',
+              cardHover: '#141D30',
+              border: '#1B2438',
+              borderHover: '#2A3854'
             }
           },
           fontFamily: {
-            sans: ['Geist', 'Plus Jakarta Sans', 'system-ui', '-apple-system', 'sans-serif'],
-            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace']
+            sans: ['Inter', '"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'Menlo', 'monospace']
           }
         }
       }
     };
   </script>
+
   <style>
-    /* Technical subtle grid & ambient lighting */
-    .bg-dot-grid {
-      background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
-      background-size: 24px 24px;
+    /* Precision Ambient Gradients & Architectural Grid */
+    .ambient-bg {
+      background: 
+        radial-gradient(circle 900px at 50% -120px, rgba(16, 185, 129, 0.12), transparent 70%),
+        radial-gradient(circle 700px at 85% 250px, rgba(6, 182, 212, 0.08), transparent 60%),
+        radial-gradient(circle 800px at 15% 750px, rgba(16, 185, 129, 0.05), transparent 60%);
     }
-    .ambient-glow {
-      background: radial-gradient(circle 900px at 50% -120px, rgba(16, 185, 129, 0.18), transparent 70%),
-                  radial-gradient(circle 700px at 85% 250px, rgba(6, 182, 212, 0.10), transparent 60%),
-                  radial-gradient(circle 600px at 15% 650px, rgba(16, 185, 129, 0.08), transparent 50%);
+
+    .tech-grid {
+      background-size: 36px 36px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
     }
-    /* Card Glass & Inner Border Highlight */
-    .glass-card {
-      background: rgba(16, 22, 37, 0.82);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+
+    /* Enterprise Glass Surface */
+    .enterprise-glass {
+      background: rgba(16, 23, 38, 0.72);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 20px 40px -15px rgba(0, 0, 0, 0.5);
     }
-    .glass-card-hover {
+
+    .enterprise-glass-card {
+      background: rgba(16, 23, 38, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05), 0 16px 32px -10px rgba(0, 0, 0, 0.4);
       transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .glass-card-hover:hover {
+
+    .enterprise-glass-card:hover {
+      border-color: rgba(16, 185, 129, 0.35);
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1), 0 24px 48px -12px rgba(16, 185, 129, 0.08);
       transform: translateY(-2px);
-      border-color: rgba(16, 185, 129, 0.45);
-      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.15), 0 25px 50px -12px rgba(16, 185, 129, 0.12);
     }
-    /* Terminal Glow */
-    .terminal-shadow {
-      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07),
-                  0 25px 60px -15px rgba(0, 0, 0, 0.8),
-                  0 0 80px -20px rgba(16, 185, 129, 0.18);
+
+    /* Terminal Window Lighting */
+    .terminal-window-shadow {
+      box-shadow: 
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 30px 70px -15px rgba(0, 0, 0, 0.8),
+        0 0 90px -25px rgba(16, 185, 129, 0.15);
     }
+
     @keyframes cursor-blink {
       0%, 100% { opacity: 1; }
       50% { opacity: 0; }
@@ -116,95 +133,97 @@
     .cursor-blink {
       animation: cursor-blink 0.9s infinite;
     }
-    /* Mobile Touch & Tap Optimizations */
+
+    /* Touch & Mobile UX Controls */
     button, a, .tappable {
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
-      min-height: 38px;
+      min-height: 40px;
     }
     button, .select-none {
       user-select: none;
       -webkit-user-select: none;
     }
     input, select, textarea {
-      font-size: 16px; /* Prevents auto-zoom on iOS Safari */
+      font-size: 16px;
     }
-    /* Custom Sleek Scrollbar */
+
+    /* Sleek Scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #05070B;
+      background: #07090E;
     }
     ::-webkit-scrollbar-thumb {
-      background: #1A2338;
+      background: #1B2438;
       border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb:hover {
       background: #2E3E61;
     }
-    /* Accessibility focus ring */
+
+    /* Accessibility Focus Ring */
     a:focus-visible, button:focus-visible {
       outline: 2px solid #10b981;
       outline-offset: 2px;
     }
   </style>
 </head>
-<body class="bg-oled-bg text-slate-200 font-sans antialiased selection:bg-emerald-500/30 selection:text-emerald-200 min-h-screen relative overflow-x-hidden">
+<body class="bg-surface-bg text-slate-200 font-sans antialiased selection:bg-brand-500/25 selection:text-brand-400 min-h-screen relative overflow-x-hidden tech-grid">
 
-  <!-- Ambient Light & Grid Background -->
-  <div class="fixed inset-0 bg-dot-grid pointer-events-none z-0"></div>
-  <div class="fixed inset-0 ambient-glow pointer-events-none z-0"></div>
+  <!-- Ambient Radial Light Layers -->
+  <div class="fixed inset-0 ambient-bg pointer-events-none z-0"></div>
 
-  <!-- Keyboard Shortcut Toast Notification -->
-  <div id="shortcut-toast" class="fixed bottom-6 right-6 z-50 transform translate-y-16 opacity-0 transition-all duration-300 pointer-events-none glass-card border border-emerald-500/50 text-emerald-300 text-xs font-mono px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5">
-    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-    <span id="shortcut-toast-msg">Phím tắt được kích hoạt</span>
+  <!-- Global Action Toast Notification -->
+  <div id="shortcut-toast" class="fixed bottom-6 right-6 z-50 transform translate-y-16 opacity-0 transition-all duration-300 pointer-events-none enterprise-glass border border-brand-500/40 text-emerald-300 text-xs font-mono px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+    <span class="w-2 h-2 rounded-full bg-brand-400 animate-pulse"></span>
+    <span id="shortcut-toast-msg">Lệnh đã được kích hoạt</span>
   </div>
 
-  <!-- Sticky Navbar with Safe Area Inset -->
-  <header class="sticky top-0 z-50 backdrop-blur-xl bg-oled-bg/85 border-b border-oled-border/80 transition-all pt-[env(safe-area-inset-top)]">
+  <!-- Navigation Bar -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-surface-bg/80 border-b border-surface-border transition-all">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       
       <!-- Brand Logo -->
-      <a href="#" class="flex items-center gap-2.5 group">
-        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-sm group-hover:scale-105 group-hover:border-emerald-400 transition-all shadow-sm">
-          &gt;_
-        </span>
-        <span class="font-mono font-bold text-lg sm:text-xl tracking-tight text-white flex items-center gap-1.5">
-          vyen
-          <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        </span>
+      <a href="#" class="flex items-center gap-3.5 group">
+        <div class="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-brand-500/10 border border-brand-500/30 group-hover:scale-105 group-hover:border-brand-500/60 transition-all shadow-md">
+          <img src="assets/logo.svg" alt="Vyen Logo" class="w-full h-full object-contain p-1">
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-mono font-bold text-xl tracking-tight text-white">vyen</span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-surface-card border border-surface-border text-slate-400">
+            v0.5.0
+          </span>
+        </div>
       </a>
 
-      <!-- Desktop Navigation Links -->
+      <!-- Navigation Links -->
       <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
-        <a href="#features" class="hover:text-emerald-400 transition-colors">Tính năng cốt lõi</a>
-        <a href="#terminal-demo" class="hover:text-emerald-400 transition-colors">Playground</a>
-        <a href="#quickstart" class="hover:text-emerald-400 transition-colors">Cài đặt nhanh</a>
-        <a href="#comparison" class="hover:text-emerald-400 transition-colors">So sánh</a>
-        <a href="#changelog" class="hover:text-emerald-400 transition-colors">Changelog</a>
-        <a href="https://github.com/tungsten321/Vyen-cli/tree/master/docs" target="_blank" rel="noopener noreferrer" class="hover:text-emerald-400 transition-colors flex items-center gap-1">
-          Tài liệu
+        <a href="#features" class="hover:text-brand-400 transition-colors">Kiến trúc</a>
+        <a href="#terminal-demo" class="hover:text-brand-400 transition-colors">Trình diễn Terminal</a>
+        <a href="#quickstart" class="hover:text-brand-400 transition-colors">Cài đặt nhanh</a>
+        <a href="#comparison" class="hover:text-brand-400 transition-colors">So sánh kỹ thuật</a>
+        <a href="#changelog" class="hover:text-brand-400 transition-colors">Changelog</a>
+        <a href="https://github.com/tungsten321/Vyen-cli/blob/master/docs/SPEC.md" target="_blank" rel="noopener noreferrer" class="hover:text-brand-400 transition-colors flex items-center gap-1 text-slate-400 hover:text-white">
+          <span>SPEC.md</span>
           <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
         </a>
       </nav>
 
-      <!-- Action Badges & GitHub Button -->
+      <!-- Action Badges & GitHub -->
       <div class="flex items-center gap-3">
-        <span class="hidden lg:inline-flex items-center gap-1 px-2.5 py-1 rounded bg-oled-surface border border-oled-border text-[11px] font-mono text-slate-400" title="Phím tắt: bấm 'C' để sao chép lệnh cài, phím '1-4' để đổi OS">
-          <kbd class="px-1 py-0.5 rounded bg-oled-card border border-slate-700 text-slate-300">C</kbd> copy · <kbd class="px-1 py-0.5 rounded bg-oled-card border border-slate-700 text-slate-300">1-4</kbd> OS
+        <span class="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-subtle border border-surface-border text-xs font-mono text-slate-400">
+          <kbd class="px-1 py-0.5 rounded bg-surface-card border border-slate-700 text-slate-300">C</kbd> Copy · <kbd class="px-1 py-0.5 rounded bg-surface-card border border-slate-700 text-slate-300">1-4</kbd> OS
         </span>
-        <a href="https://www.npmjs.com/package/@nguyenhuumanh/vyen" target="_blank" rel="noopener noreferrer" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-oled-surface border border-oled-border hover:border-emerald-500/40 text-xs font-mono text-slate-300 hover:text-white transition-all shadow-sm">
-          <span class="w-2 h-2 rounded-full bg-red-500"></span>
-          <span id="npm-version-badge">npm v0.5.0</span>
-        </a>
-        <a href="https://github.com/tungsten321/Vyen-cli" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-sm font-medium text-white transition-all shadow-sm">
+
+        <a href="https://github.com/tungsten321/Vyen-cli" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-xs sm:text-sm font-medium text-white transition-all shadow-sm">
           <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
           <span id="github-stars-text">Star on GitHub</span>
         </a>
       </div>
+
     </div>
   </header>
 
@@ -212,291 +231,318 @@
   <section class="relative pt-12 pb-16 md:pt-20 md:pb-24 z-10">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
       
+      <!-- Prominent Hero Logo Centerpiece -->
+      <div class="flex justify-center mb-8">
+        <div class="relative group">
+          <!-- Ambient Glow Aura behind Logo -->
+          <div class="absolute -inset-4 bg-gradient-to-r from-emerald-500/30 via-teal-500/25 to-cyan-500/30 rounded-full blur-2xl opacity-75 group-hover:opacity-100 transition duration-500"></div>
+          <!-- Hero Logo Container -->
+          <div class="relative w-28 h-28 sm:w-36 sm:h-36 rounded-3xl bg-[#090E17]/90 border border-brand-500/30 hover:border-brand-500/60 p-4 sm:p-5 flex items-center justify-center shadow-2xl backdrop-blur-xl group-hover:scale-105 transition-all duration-300">
+            <img src="assets/logo.svg" alt="Vyen Autonomous Agent Logo" class="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(0,240,255,0.4)]">
+          </div>
+        </div>
+      </div>
+
       <!-- Release Announcement Pill -->
-      <a href="#changelog" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 hover:border-emerald-500/60 text-emerald-300 text-xs sm:text-sm font-medium mb-6 transition-all hover:scale-[1.02] shadow-lg shadow-emerald-500/5">
-        <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-400 text-oled-bg tracking-wide">MỚI</span>
-        <span>Vyen v0.5.0: Headless Contract v1 &amp; Structured Outputs</span>
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      <a href="#changelog" class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/25 hover:border-brand-500/50 text-emerald-300 text-xs sm:text-sm font-medium mb-8 transition-all hover:scale-[1.01] shadow-lg shadow-brand-500/5">
+        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-500 text-surface-bg tracking-wide uppercase">MỚI</span>
+        <span>Vyen v0.5.0: Headless Architecture &amp; Structured Outputs Schema</span>
+        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
       </a>
 
       <!-- Headline -->
       <h1 class="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.08] mb-6">
-        AI Coding Agent Ngay Trong <br class="hidden sm:inline">
-        <span class="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">Terminal Của Bạn</span>
+        AI Coding Agent Độc Lập <br class="hidden sm:inline">
+        <span class="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
+          Cho Kỹ Sư Phần Mềm Hiện Đại
+        </span>
       </h1>
 
       <!-- Subtitle -->
-      <p class="max-w-3xl mx-auto text-base sm:text-lg md:text-xl text-slate-300 leading-relaxed mb-8">
-        Độc lập. Siêu nhẹ. Tối ưu ưu tiên cho <strong class="text-white font-semibold">Termux trên Android</strong> và đa nền tảng Linux, macOS, Windows. Sử dụng API key của riêng bạn (BYOK), bảo mật phân tầng chuẩn mực, không phụ thuộc máy chủ trung gian.
+      <p class="max-w-3xl mx-auto text-base sm:text-lg md:text-xl text-slate-300 leading-relaxed mb-10">
+        Xây dựng theo chuẩn kỹ nghệ tối giản, hiệu năng cao và bảo mật nghiêm ngặt. Ưu tiên hàng đầu cho <strong class="text-white font-semibold">Termux trên Android</strong> và tương thích hoàn toàn Linux, macOS, Windows. Sử dụng API key của riêng bạn (BYOK), cơ chế phân quyền Fail-Closed và không phụ thuộc dịch vụ trung gian.
       </p>
 
-      <!-- Micro-Metrics Highlights Bar -->
-      <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 mb-8 text-xs font-mono text-slate-400">
-        <span class="px-2.5 py-1 rounded-md bg-oled-surface border border-oled-border flex items-center gap-1.5">
-          <span class="text-emerald-400 font-bold">⚡</span> Zero Native Addons
+      <!-- Architecture Metrics Bar -->
+      <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 mb-10 text-xs font-mono text-slate-300">
+        <span class="px-3 py-1.5 rounded-lg bg-surface-subtle border border-surface-border flex items-center gap-2 shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-brand-400"></span> 0 Native Addons
         </span>
-        <span class="px-2.5 py-1 rounded-md bg-oled-surface border border-oled-border flex items-center gap-1.5">
-          <span class="text-emerald-400 font-bold">📱</span> Termux First-Class
+        <span class="px-3 py-1.5 rounded-lg bg-surface-subtle border border-surface-border flex items-center gap-2 shadow-sm">
+          <span class="text-brand-400 font-bold">⚡</span> Termux Native First-Class
         </span>
-        <span class="px-2.5 py-1 rounded-md bg-oled-surface border border-oled-border flex items-center gap-1.5">
-          <span class="text-cyan-400 font-bold">🔑</span> 100% BYOK Freedom
+        <span class="px-3 py-1.5 rounded-lg bg-surface-subtle border border-surface-border flex items-center gap-2 shadow-sm">
+          <span class="text-brand-accent font-bold">🔑</span> 100% BYOK Freedom
         </span>
-        <span class="px-2.5 py-1 rounded-md bg-oled-surface border border-oled-border flex items-center gap-1.5">
+        <span class="px-3 py-1.5 rounded-lg bg-surface-subtle border border-surface-border flex items-center gap-2 shadow-sm">
           <span class="text-amber-400 font-bold">🛡️</span> 8 Fail-Closed Hooks
         </span>
       </div>
 
-      <!-- Smart Install Box with Package Manager Switcher -->
+      <!-- Installation Widget with Package Manager Selector -->
       <div class="max-w-2xl mx-auto mb-10">
         
-        <!-- Package Manager Switcher Bar -->
+        <!-- Package Switcher -->
         <div class="flex items-center justify-center gap-1.5 mb-2.5 font-mono text-xs">
-          <span class="text-slate-400 text-[11px] mr-1 select-none">Trình cài đặt:</span>
-          <button data-pkg="npm" class="pkg-btn px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold transition-all">npm</button>
-          <button data-pkg="pnpm" class="pkg-btn px-2.5 py-1 rounded-md bg-oled-card text-slate-400 hover:text-slate-200 border border-oled-border transition-all">pnpm</button>
-          <button data-pkg="yarn" class="pkg-btn px-2.5 py-1 rounded-md bg-oled-card text-slate-400 hover:text-slate-200 border border-oled-border transition-all">yarn</button>
-          <button data-pkg="bun" class="pkg-btn px-2.5 py-1 rounded-md bg-oled-card text-slate-400 hover:text-slate-200 border border-oled-border transition-all">bun</button>
+          <span class="text-slate-400 text-[11px] mr-1 select-none font-medium">Trình quản lý gói:</span>
+          <button data-pkg="npm" class="pkg-btn px-3 py-1 rounded-md bg-brand-500/20 text-brand-400 border border-brand-500/40 font-semibold transition-all">npm</button>
+          <button data-pkg="pnpm" class="pkg-btn px-3 py-1 rounded-md bg-surface-card text-slate-400 hover:text-slate-200 border border-surface-border transition-all">pnpm</button>
+          <button data-pkg="yarn" class="pkg-btn px-3 py-1 rounded-md bg-surface-card text-slate-400 hover:text-slate-200 border border-surface-border transition-all">yarn</button>
+          <button data-pkg="bun" class="pkg-btn px-3 py-1 rounded-md bg-surface-card text-slate-400 hover:text-slate-200 border border-surface-border transition-all">bun</button>
         </div>
 
         <!-- Command Bar Box with 1-Click Copy -->
-        <div class="flex items-center justify-between p-2 sm:p-2.5 rounded-xl glass-card border border-oled-border hover:border-emerald-500/50 shadow-2xl transition-all group">
+        <div class="flex items-center justify-between p-2 sm:p-2.5 rounded-xl enterprise-glass border border-surface-border hover:border-brand-500/40 shadow-2xl transition-all group">
           <div class="flex items-center gap-3 pl-3 overflow-hidden text-left font-mono text-sm sm:text-base text-slate-200">
-            <span class="text-emerald-400 select-none font-bold">$</span>
+            <span class="text-brand-400 select-none font-bold">$</span>
             <code id="install-command" class="truncate font-semibold text-white">npm install -g @nguyenhuumanh/vyen</code>
           </div>
-          <button id="copy-btn" data-copy="npm install -g @nguyenhuumanh/vyen" class="copy-btn flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 hover:text-white font-mono text-xs font-semibold transition-all shrink-0">
+          <button id="copy-btn" data-copy="npm install -g @nguyenhuumanh/vyen" class="copy-btn copy-command flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-500/15 hover:bg-brand-500/25 border border-brand-500/30 text-emerald-300 hover:text-white font-mono text-xs font-semibold transition-all shrink-0">
             <svg id="copy-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
             <span id="copy-text">Sao chép (C)</span>
           </button>
         </div>
+
         <p class="mt-2.5 text-xs text-slate-400 font-mono">
-          Yêu cầu Node &gt;= 22.16 · Bản JS biên dịch sẵn · Không cần compiler native
+          Yêu cầu Node.js &gt;= 22.16 LTS · Mã nguồn biên dịch sẵn · Tương thích tức thì
         </p>
       </div>
 
-      <!-- Hero Call-to-Action Buttons -->
+      <!-- Action Buttons -->
       <div class="flex flex-wrap items-center justify-center gap-4">
-        <a href="#quickstart" class="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-oled-bg font-bold text-sm transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 hover:scale-[1.02]">
+        <a href="#quickstart" class="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-surface-bg font-bold text-sm transition-all shadow-lg shadow-brand-500/20 hover:scale-[1.01]">
           Bắt đầu thiết lập ngay →
         </a>
-        <a href="#terminal-demo" class="px-6 py-3 rounded-xl bg-oled-surface hover:bg-oled-card border border-oled-border text-slate-200 font-semibold text-sm transition-all hover:border-slate-500">
-          Xem Playground Demo
+        <a href="#terminal-demo" class="px-6 py-3 rounded-xl bg-surface-subtle hover:bg-surface-card border border-surface-border text-slate-200 font-semibold text-sm transition-all hover:border-slate-500">
+          Xem kịch bản hoạt động
         </a>
       </div>
 
     </div>
   </section>
 
-  <!-- Interactive Terminal Playground Section (Multi-Scenario) -->
+  <!-- Interactive Terminal Playground -->
   <section id="terminal-demo" class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 z-10">
     
-    <!-- Scenario Switcher Tabs on top of Terminal -->
-    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-      <div class="flex flex-wrap items-center gap-1.5 font-mono text-xs">
-        <span class="text-slate-400 mr-1 select-none font-sans font-medium text-xs">Kịch bản tương tác:</span>
-        <button data-scenario="autofix" class="scenario-btn px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-medium transition-all">
+    <!-- Scenario Switcher Bar -->
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3.5">
+      <div class="flex flex-wrap items-center gap-2 font-mono text-xs">
+        <span class="text-slate-400 mr-1 select-none font-sans font-medium">Kịch bản minh họa:</span>
+        <button data-scenario="autofix" class="scenario-btn px-3 py-1.5 rounded-lg bg-brand-500/20 text-brand-400 border border-brand-500/40 font-medium transition-all">
           1. Auto-fix Bug
         </button>
-        <button data-scenario="headless" class="scenario-btn px-3 py-1.5 rounded-lg bg-oled-surface text-slate-400 hover:text-slate-200 border border-oled-border transition-all">
+        <button data-scenario="headless" class="scenario-btn px-3 py-1.5 rounded-lg bg-surface-subtle text-slate-400 hover:text-slate-200 border border-surface-border transition-all">
           2. Headless v0.5.0
         </button>
-        <button data-scenario="pair" class="scenario-btn px-3 py-1.5 rounded-lg bg-oled-surface text-slate-400 hover:text-slate-200 border border-oled-border transition-all">
+        <button data-scenario="pair" class="scenario-btn px-3 py-1.5 rounded-lg bg-surface-subtle text-slate-400 hover:text-slate-200 border border-surface-border transition-all">
           3. Ghép đôi /pair QR
         </button>
-        <button data-scenario="failclosed" class="scenario-btn px-3 py-1.5 rounded-lg bg-oled-surface text-slate-400 hover:text-slate-200 border border-oled-border transition-all">
+        <button data-scenario="failclosed" class="scenario-btn px-3 py-1.5 rounded-lg bg-surface-subtle text-slate-400 hover:text-slate-200 border border-surface-border transition-all">
           4. Chặn Secret &amp; Hook
         </button>
       </div>
 
-      <button id="replay-btn" title="Chạy lại animation" class="text-xs font-mono text-slate-400 hover:text-emerald-400 px-2.5 py-1 rounded bg-oled-surface border border-oled-border hover:border-emerald-500/40 transition-colors flex items-center gap-1">
+      <button id="replay-btn" title="Chạy lại animation" class="text-xs font-mono text-slate-400 hover:text-brand-400 px-3 py-1.5 rounded-lg bg-surface-subtle border border-surface-border hover:border-brand-500/40 transition-colors flex items-center gap-1.5">
         <span>↻ Replay</span>
       </button>
     </div>
 
     <!-- Terminal Window Container -->
-    <div id="terminal-mockup" class="terminal-mockup terminal-window rounded-2xl bg-oled-surface/95 border border-oled-border terminal-shadow backdrop-blur-xl overflow-hidden">
+    <div id="terminal-mockup" class="terminal-mockup terminal-window rounded-2xl bg-[#090D16]/95 border border-surface-border terminal-window-shadow backdrop-blur-2xl overflow-hidden">
       
-      <!-- Terminal Header / Title Bar -->
-      <div class="flex items-center justify-between px-4 py-3 bg-[#070A11] border-b border-oled-border">
+      <!-- Window Title Bar -->
+      <div class="flex items-center justify-between px-4 py-3 bg-[#060910] border-b border-surface-border">
         <div class="flex items-center gap-2">
-          <span class="w-3 h-3 rounded-full bg-[#ff5f56] inline-block"></span>
-          <span class="w-3 h-3 rounded-full bg-[#ffbd2e] inline-block"></span>
-          <span class="w-3 h-3 rounded-full bg-[#27c93f] inline-block"></span>
+          <span class="w-3 h-3 rounded-full bg-[#ff5f56] inline-block opacity-80"></span>
+          <span class="w-3 h-3 rounded-full bg-[#ffbd2e] inline-block opacity-80"></span>
+          <span class="w-3 h-3 rounded-full bg-[#27c93f] inline-block opacity-80"></span>
         </div>
         <div class="text-xs font-mono text-slate-400 flex items-center gap-2 truncate">
-          <span class="text-emerald-400 font-semibold">~/my-project</span>
+          <span class="text-brand-400 font-medium">~/workspace/production</span>
           <span class="text-slate-600">·</span>
-          <span class="text-slate-400">git:(<span class="text-cyan-400">master</span>)</span>
+          <span class="text-slate-400">git:(<span class="text-brand-accent">main</span>)</span>
           <span class="text-slate-600">·</span>
-          <span>vyen v0.5.0</span>
+          <span class="text-slate-400">vyen v0.5.0</span>
         </div>
-        <div class="text-[11px] font-mono text-slate-500 hidden sm:block">POSIX Terminal Mode</div>
+        <div class="text-[11px] font-mono text-slate-500 hidden sm:block">POSIX Interactive Session</div>
       </div>
 
-      <!-- Terminal Body / Content Stream -->
-      <div id="terminal-body" class="p-5 font-mono text-xs sm:text-sm leading-relaxed min-h-[380px] text-slate-300 space-y-4 overflow-x-auto">
+      <!-- Terminal Body -->
+      <div id="terminal-body" class="p-6 font-mono text-xs sm:text-sm leading-relaxed min-h-[380px] text-slate-300 space-y-4 overflow-x-auto">
         
-        <!-- Command Line Input -->
+        <!-- Command Prompt Line -->
         <div class="flex items-start gap-2">
-          <span class="text-emerald-400 select-none font-bold">vyen&gt;</span>
-          <span id="prompt-text" class="text-white font-medium"></span><span class="cursor-blink text-emerald-400">▋</span>
+          <span class="text-brand-400 select-none font-bold">vyen&gt;</span>
+          <span id="prompt-text" class="text-white font-medium"></span><span class="cursor-blink text-brand-400">▋</span>
         </div>
 
-        <!-- Dynamic Scenario Content Display -->
+        <!-- Dynamic Scenario Content -->
         <div id="stream-content" class="space-y-3.5 transition-opacity duration-300">
-          <!-- Injected via JavaScript based on chosen scenario -->
+          <!-- Injected via JavaScript -->
         </div>
 
+      </div>
+
+      <!-- Terminal Status Bar -->
+      <div class="px-5 py-2.5 bg-[#060910] border-t border-surface-border flex flex-wrap items-center justify-between text-[11px] font-mono text-slate-400">
+        <div class="flex items-center gap-4">
+          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-brand-400"></span> Engine: Active</span>
+          <span>Tokens: <strong class="text-slate-300">1,420</strong></span>
+          <span>Decision: <strong class="text-brand-400">Approved</strong></span>
+        </div>
+        <div class="text-slate-500 hidden sm:block">
+          Quy trình độc lập · Kiểm toán JSONL cục bộ
+        </div>
       </div>
 
     </div>
 
-    <!-- Interactive Command Suggestion Pills -->
-    <div class="mt-3.5 flex flex-wrap items-center gap-2 text-xs font-mono text-slate-400">
-      <span class="select-none text-slate-500 font-sans">Gợi ý lệnh gõ nhanh:</span>
-      <button class="cmd-pill px-2.5 py-1 rounded bg-oled-card border border-oled-border hover:border-emerald-500/40 hover:text-emerald-300 transition-colors" data-cmd="vyen setup">vyen setup</button>
-      <button class="cmd-pill px-2.5 py-1 rounded bg-oled-card border border-oled-border hover:border-emerald-500/40 hover:text-emerald-300 transition-colors" data-cmd="vyen /pair">vyen /pair</button>
-      <button class="cmd-pill px-2.5 py-1 rounded bg-oled-card border border-oled-border hover:border-emerald-500/40 hover:text-emerald-300 transition-colors" data-cmd='vyen -p "Review diff" < git.diff'>vyen -p "Review diff"</button>
-      <button class="cmd-pill px-2.5 py-1 rounded bg-oled-card border border-oled-border hover:border-emerald-500/40 hover:text-emerald-300 transition-colors" data-cmd="vyen --read-only">vyen --read-only</button>
+    <!-- Suggested Quick Executions -->
+    <div class="mt-4 flex flex-wrap items-center gap-2 text-xs font-mono text-slate-400">
+      <span class="select-none text-slate-500 font-sans">Lệnh mẫu thông dụng:</span>
+      <button class="cmd-pill px-2.5 py-1 rounded bg-surface-card border border-surface-border hover:border-brand-500/40 hover:text-brand-400 transition-colors" data-cmd="vyen setup">vyen setup</button>
+      <button class="cmd-pill px-2.5 py-1 rounded bg-surface-card border border-surface-border hover:border-brand-500/40 hover:text-brand-400 transition-colors" data-cmd="vyen /pair">vyen /pair</button>
+      <button class="cmd-pill px-2.5 py-1 rounded bg-surface-card border border-surface-border hover:border-brand-500/40 hover:text-brand-400 transition-colors" data-cmd='vyen -p "Review diff" < git.diff'>vyen -p "Review diff"</button>
+      <button class="cmd-pill px-2.5 py-1 rounded bg-surface-card border border-surface-border hover:border-brand-500/40 hover:text-brand-400 transition-colors" data-cmd="vyen --read-only">vyen --read-only</button>
     </div>
 
   </section>
 
-  <!-- 4 Core Pillars (Bento Grid) Section -->
-  <section id="features" class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 z-10 border-t border-oled-border/50">
+  <!-- Core Architectural Pillars Section (Bento Grid) -->
+  <section id="features" class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 z-10 border-t border-surface-border">
     <div class="text-center max-w-3xl mx-auto mb-16">
-      <h2 class="text-xs font-mono font-bold tracking-widest text-emerald-400 uppercase mb-3">Kiến Trúc &amp; Nét Độc Bản</h2>
-      <p class="text-3xl sm:text-4xl font-bold tracking-tight text-white">4 Trụ Cột Tạo Nên Khác Biệt Của Vyen</p>
-      <p class="mt-4 text-slate-400 text-base">Thiết kế tinh gọn cho lập trình viên cần sức mạnh agent đích thực, quyền kiểm soát tối đa và sự linh hoạt trên thiết bị di động.</p>
+      <h2 class="text-xs font-mono font-bold tracking-widest text-brand-400 uppercase mb-3">Kiến Trúc &amp; Nền Tảng</h2>
+      <p class="text-3xl sm:text-4xl font-bold tracking-tight text-white">4 Trụ Cột Kỹ Thuật Độc Bản</p>
+      <p class="mt-4 text-slate-400 text-base">Được thiết kế cho các kỹ sư đòi hỏi sự chính xác tuyệt đối, tốc độ thực thi tại biên và tính toàn vẹn hệ thống.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
       
       <!-- Pillar 1: Termux & Mobile First -->
-      <div class="relative p-7 sm:p-8 rounded-2xl glass-card border border-oled-border glass-card-hover group">
+      <div class="relative p-7 sm:p-8 rounded-2xl enterprise-glass-card group">
         <div class="flex items-center justify-between mb-6">
-          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+          <div class="w-12 h-12 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400 group-hover:scale-105 transition-transform">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
           </div>
-          <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 font-mono text-xs font-semibold">Termux First-Class</span>
+          <span class="px-2.5 py-1 rounded-md bg-brand-500/15 text-emerald-300 font-mono text-xs font-semibold">Termux First-Class</span>
         </div>
-        <h3 class="text-xl font-bold text-white mb-3">Tối Ưu Cho Termux Trên Android</h3>
+        <h3 class="text-xl font-bold text-white mb-3">Tối Ưu Native Cho Termux Trên Android</h3>
         <p class="text-slate-300 text-sm leading-relaxed mb-4">
-          Xây dựng bằng 100% JavaScript thuần chạy trên Node &gt;= 22.16. Không cần quyền root, không cần cài proot, glibc hay trình biên dịch C++ native cồng kềnh.
+          Xây dựng bằng 100% JavaScript thuần chạy trên Node &gt;= 22.16 LTS. Vận hành trực tiếp trong môi trường Termux mà không cần quyền root, không cần proot hay glibc wrapper cồng kềnh.
         </p>
         <ul class="text-xs text-slate-400 space-y-2 font-mono">
-          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Chạy trực tiếp trong $HOME của Termux</li>
-          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Hỗ trợ ripgrep hệ thống hoặc fallback JS thuần</li>
-          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Tương thích đầy đủ clipboard Android</li>
+          <li class="flex items-center gap-2"><span class="text-brand-400 font-bold">✓</span> Khởi chạy tức thì trong thư mục $HOME của thiết bị di động</li>
+          <li class="flex items-center gap-2"><span class="text-brand-400 font-bold">✓</span> Tận dụng ripgrep hệ thống với cơ chế fallback JS thuần mượt mà</li>
+          <li class="flex items-center gap-2"><span class="text-brand-400 font-bold">✓</span> Hỗ trợ đầy đủ tương tác clipboard hệ thống Android</li>
         </ul>
       </div>
 
       <!-- Pillar 2: Bring Your Own Key & Multi-Provider -->
-      <div class="relative p-7 sm:p-8 rounded-2xl glass-card border border-oled-border glass-card-hover group">
+      <div class="relative p-7 sm:p-8 rounded-2xl enterprise-glass-card group">
         <div class="flex items-center justify-between mb-6">
-          <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
+          <div class="w-12 h-12 rounded-xl bg-brand-accent/10 border border-brand-accent/30 flex items-center justify-center text-brand-accent group-hover:scale-105 transition-transform">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
           </div>
-          <span class="px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 font-mono text-xs font-semibold">BYOK Freedom</span>
+          <span class="px-2.5 py-1 rounded-md bg-brand-accent/15 text-cyan-300 font-mono text-xs font-semibold">BYOK Freedom</span>
         </div>
         <h3 class="text-xl font-bold text-white mb-3">Bring Your Own Key &amp; Tự Do Đa Provider</h3>
         <p class="text-slate-300 text-sm leading-relaxed mb-4">
-          Không phí thuê bao hàng tháng, không bị khóa vào nhà cung cấp độc quyền. Bạn toàn quyền dùng API key của mình để gọi trực tiếp các mô hình hàng đầu.
+          Loại bỏ hoàn toàn chi phí thuê bao cố định và rủi ro bị khóa chặt vào một nhà cung cấp. Bạn toàn quyền sử dụng API key cá nhân để kết nối trực tiếp với các mô hình tiên tiến nhất.
         </p>
         <ul class="text-xs text-slate-400 space-y-2 font-mono">
-          <li class="flex items-center gap-2"><span class="text-cyan-400">✓</span> OpenAI-compatible, Responses API &amp; Anthropic Messages</li>
-          <li class="flex items-center gap-2"><span class="text-cyan-400">✓</span> Hỗ trợ Local LLMs (Ollama, vLLM, LM Studio)</li>
-          <li class="flex items-center gap-2"><span class="text-cyan-400">✓</span> Tự động dò danh sách model động qua /models</li>
+          <li class="flex items-center gap-2"><span class="text-brand-accent font-bold">✓</span> Tương thích OpenAI, Responses API chuẩn mực và Anthropic Messages</li>
+          <li class="flex items-center gap-2"><span class="text-brand-accent font-bold">✓</span> Hỗ trợ suy luận cục bộ ngoại tuyến qua Ollama, vLLM, LM Studio</li>
+          <li class="flex items-center gap-2"><span class="text-brand-accent font-bold">✓</span> Tự động khám phá danh mục model linh hoạt qua lệnh /models</li>
         </ul>
       </div>
 
       <!-- Pillar 3: Fortified Security & Workspace Trust -->
-      <div class="relative p-7 sm:p-8 rounded-2xl glass-card border border-oled-border glass-card-hover group">
+      <div class="relative p-7 sm:p-8 rounded-2xl enterprise-glass-card group">
         <div class="flex items-center justify-between mb-6">
-          <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
           </div>
           <span class="px-2.5 py-1 rounded-md bg-amber-500/15 text-amber-300 font-mono text-xs font-semibold">Fail-Closed Safety</span>
         </div>
         <h3 class="text-xl font-bold text-white mb-3">Bảo Mật Phân Tầng &amp; Workspace Trust</h3>
         <p class="text-slate-300 text-sm leading-relaxed mb-4">
-          Quyền kiểm soát chặt chẽ với chế độ Ask / Auto / Read-Only. Xác thực Workspace Trust qua mã băm SHA-256 bảo vệ an toàn tệp và kịch bản shell.
+          Quyền kiểm soát chặt chẽ với các chế độ Ask / Auto / Read-Only. Xác thực Workspace Trust bằng chữ ký SHA-256 bảo vệ toàn diện các kịch bản shell thực thi.
         </p>
         <ul class="text-xs text-slate-400 space-y-2 font-mono">
-          <li class="flex items-center gap-2"><span class="text-amber-400">✓</span> 8 Hook vòng đời fail-closed (PreToolUse, PostToolUse...)</li>
-          <li class="flex items-center gap-2"><span class="text-amber-400">✓</span> Chặn rò rỉ API key ra môi trường shell/con</li>
-          <li class="flex items-center gap-2"><span class="text-amber-400">✓</span> Nhật ký kiểm toán audit log định dạng JSONL cục bộ</li>
+          <li class="flex items-center gap-2"><span class="text-amber-400 font-bold">✓</span> 8 Hook vòng đời fail-closed (PreToolUse, PostToolUse...) bảo vệ hệ thống</li>
+          <li class="flex items-center gap-2"><span class="text-amber-400 font-bold">✓</span> Ngăn chặn hoàn toàn việc rò rỉ credential API ra shell con</li>
+          <li class="flex items-center gap-2"><span class="text-amber-400 font-bold">✓</span> Nhật ký kiểm toán audit log định dạng JSONL minh bạch cục bộ</li>
         </ul>
       </div>
 
       <!-- Pillar 4: Autonomous Ecosystem (MCP & Subagents) -->
-      <div class="relative p-7 sm:p-8 rounded-2xl glass-card border border-oled-border glass-card-hover group">
+      <div class="relative p-7 sm:p-8 rounded-2xl enterprise-glass-card group">
         <div class="flex items-center justify-between mb-6">
-          <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+          <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 group-hover:scale-105 transition-transform">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
           </div>
           <span class="px-2.5 py-1 rounded-md bg-purple-500/15 text-purple-300 font-mono text-xs font-semibold">Extensible Power</span>
         </div>
         <h3 class="text-xl font-bold text-white mb-3">Subagents &amp; Model Context Protocol (MCP)</h3>
         <p class="text-slate-300 text-sm leading-relaxed mb-4">
-          Tích hợp sâu rộng hệ sinh thái công cụ: phân việc cho Subagents chạy ngầm, mở rộng tài nguyên qua MCP server và điều khiển ghép đôi thiết bị qua `/pair`.
+          Khả năng mở rộng không giới hạn: phân quyền tác vụ cho các Subagent chạy nền độc lập, kết nối công cụ ngoài qua chuẩn Model Context Protocol (MCP) và ghép đôi thiết bị qua /pair.
         </p>
         <ul class="text-xs text-slate-400 space-y-2 font-mono">
-          <li class="flex items-center gap-2"><span class="text-purple-400">✓</span> Quản lý MCP cấp độ user và project (.vyen/mcp.json)</li>
-          <li class="flex items-center gap-2"><span class="text-purple-400">✓</span> Mạng lưới Agent Network và workflow tùy biến đa bước</li>
-          <li class="flex items-center gap-2"><span class="text-purple-400">✓</span> Giao diện TUI toàn màn hình siêu mượt với phím tắt nhanh</li>
+          <li class="flex items-center gap-2"><span class="text-purple-400 font-bold">✓</span> Quản lý MCP cấp độ user và project (.vyen/mcp.json) với ưu tiên User Deny</li>
+          <li class="flex items-center gap-2"><span class="text-purple-400 font-bold">✓</span> Điều phối mạng lưới tác vụ Agent Network và workflow tùy biến</li>
+          <li class="flex items-center gap-2"><span class="text-purple-400 font-bold">✓</span> Ghép đôi thiết bị từ xa qua tunnel bảo mật Cloudflare (/pair)</li>
         </ul>
       </div>
 
     </div>
   </section>
 
-  <!-- Feature Comparison Table Section -->
-  <section id="comparison" class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 z-10 border-t border-oled-border/50">
+  <!-- Technical Benchmark & Comparison Matrix -->
+  <section id="comparison" class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 z-10 border-t border-surface-border">
     <div class="text-center max-w-3xl mx-auto mb-14">
-      <h2 class="text-xs font-mono font-bold tracking-widest text-emerald-400 uppercase mb-3">Sự Vượt Trội</h2>
-      <p class="text-3xl sm:text-4xl font-bold tracking-tight text-white">So Sánh Vyen Với Các Coding Agent Khác</p>
-      <p class="mt-4 text-slate-400 text-base">Xem lý do vì sao lập trình viên lựa chọn Vyen cho quy trình làm việc độc lập và di động.</p>
+      <h2 class="text-xs font-mono font-bold tracking-widest text-brand-400 uppercase mb-3">Đối Sánh Kỹ Thuật</h2>
+      <p class="text-3xl sm:text-4xl font-bold tracking-tight text-white">So Sánh Vyen Với Các Giải Pháp Khác</p>
+      <p class="mt-4 text-slate-400 text-base">Đánh giá các tiêu chí kiến trúc quan trọng cho lập trình viên cần sự tự chủ và tính di động.</p>
     </div>
 
-    <div class="overflow-x-auto rounded-2xl glass-card border border-oled-border">
+    <div class="overflow-x-auto rounded-2xl enterprise-glass-card border border-surface-border">
       <table class="w-full text-left text-sm font-sans border-collapse">
         <thead>
-          <tr class="border-b border-oled-border bg-oled-surface/70 font-mono text-xs">
-            <th class="p-4 sm:p-5 text-slate-300 font-bold">Tiêu chí</th>
-            <th class="p-4 sm:p-5 text-emerald-400 font-bold bg-emerald-500/10">Vyen CLI</th>
+          <tr class="border-b border-surface-border bg-surface-subtle/80 font-mono text-xs">
+            <th class="p-4 sm:p-5 text-slate-300 font-semibold">Tiêu chí kiến trúc</th>
+            <th class="p-4 sm:p-5 text-brand-400 font-bold bg-brand-500/10">Vyen CLI</th>
             <th class="p-4 sm:p-5 text-slate-400">Claude Code</th>
             <th class="p-4 sm:p-5 text-slate-400">Cursor / Aider</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-oled-border/60 font-mono text-xs sm:text-sm">
+        <tbody class="divide-y divide-surface-border/60 font-mono text-xs sm:text-sm">
           <tr class="hover:bg-white/[0.02]">
             <td class="p-4 sm:p-5 text-white font-medium font-sans">Termux (Android) Native</td>
-            <td class="p-4 sm:p-5 text-emerald-400 font-bold bg-emerald-500/5">✔ Native (0 root / 0 proot)</td>
+            <td class="p-4 sm:p-5 text-brand-400 font-bold bg-brand-500/5">✔ Native (0 root / 0 proot)</td>
             <td class="p-4 sm:p-5 text-rose-400">✘ Không hỗ trợ</td>
             <td class="p-4 sm:p-5 text-amber-400">⚠ Phức tạp qua proot/glibc</td>
           </tr>
           <tr class="hover:bg-white/[0.02]">
             <td class="p-4 sm:p-5 text-white font-medium font-sans">Chi phí / Thuê bao</td>
-            <td class="p-4 sm:p-5 text-emerald-400 font-bold bg-emerald-500/5">✔ Miễn phí 100% (Open-Source)</td>
+            <td class="p-4 sm:p-5 text-brand-400 font-bold bg-brand-500/5">✔ Miễn phí 100% (Open-Source)</td>
             <td class="p-4 sm:p-5 text-slate-300">Tính theo token API</td>
             <td class="p-4 sm:p-5 text-slate-300">$20/tháng subscription</td>
           </tr>
           <tr class="hover:bg-white/[0.02]">
             <td class="p-4 sm:p-5 text-white font-medium font-sans">Lựa chọn Provider (BYOK)</td>
-            <td class="p-4 sm:p-5 text-emerald-400 font-bold bg-emerald-500/5">✔ OpenAI, Anthropic, Ollama, LM Studio</td>
+            <td class="p-4 sm:p-5 text-brand-400 font-bold bg-brand-500/5">✔ OpenAI, Anthropic, Ollama, LM Studio</td>
             <td class="p-4 sm:p-5 text-amber-400">Chỉ Anthropic</td>
             <td class="p-4 sm:p-5 text-slate-300">Đa dạng</td>
           </tr>
           <tr class="hover:bg-white/[0.02]">
             <td class="p-4 sm:p-5 text-white font-medium font-sans">Fail-Closed Lifecycle Hooks</td>
-            <td class="p-4 sm:p-5 text-emerald-400 font-bold bg-emerald-500/5">✔ 8 Sự kiện chuẩn + SHA-256 Trust</td>
-            <td class="p-4 sm:p-5 text-emerald-400">✔ Có hooks</td>
+            <td class="p-4 sm:p-5 text-brand-400 font-bold bg-brand-500/5">✔ 8 Sự kiện chuẩn + SHA-256 Trust</td>
+            <td class="p-4 sm:p-5 text-brand-400">✔ Có hooks</td>
             <td class="p-4 sm:p-5 text-rose-400">✘ Không hỗ trợ</td>
           </tr>
           <tr class="hover:bg-white/[0.02]">
             <td class="p-4 sm:p-5 text-white font-medium font-sans">Điều khiển từ xa (Pair)</td>
-            <td class="p-4 sm:p-5 text-emerald-400 font-bold bg-emerald-500/5">✔ /pair Cloudflare QR Tunnel</td>
+            <td class="p-4 sm:p-5 text-brand-400 font-bold bg-brand-500/5">✔ /pair Cloudflare QR Tunnel</td>
             <td class="p-4 sm:p-5 text-rose-400">✘ Không hỗ trợ</td>
             <td class="p-4 sm:p-5 text-rose-400">✘ Không hỗ trợ</td>
           </tr>
@@ -505,19 +551,19 @@
     </div>
   </section>
 
-  <!-- Quick Start Section with OS Switcher & Auto-Detection -->
-  <section id="quickstart" class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 z-10 border-t border-oled-border/50">
+  <!-- Multi-Platform Quick Start Section -->
+  <section id="quickstart" class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 z-10 border-t border-surface-border">
     <div class="text-center max-w-3xl mx-auto mb-10">
-      <h2 class="text-xs font-mono font-bold tracking-widest text-emerald-400 uppercase mb-3">Bắt Đầu Trong 1 Phút</h2>
+      <h2 class="text-xs font-mono font-bold tracking-widest text-brand-400 uppercase mb-3">Bắt Đầu Nhanh</h2>
       <p class="text-3xl sm:text-4xl font-bold tracking-tight text-white">Hướng Dẫn Cài Đặt Đa Nền Tảng</p>
       <p id="device-detected-notice" class="mt-4 text-slate-400 text-base">
-        Hệ thống tự động phát hiện hệ điều hành của bạn hoặc bấm phím số <kbd class="px-1.5 py-0.5 rounded bg-oled-card border border-slate-700 text-emerald-400 font-mono text-xs">1-4</kbd> để chuyển đổi.
+        Hệ thống tự động phát hiện thiết bị hoặc bấm phím số <kbd class="px-1.5 py-0.5 rounded bg-surface-card border border-slate-700 text-brand-400 font-mono text-xs">1-4</kbd> để chuyển đổi.
       </p>
     </div>
 
-    <!-- OS Tabs Bar -->
-    <div class="flex items-center justify-center gap-2 p-1.5 rounded-xl bg-oled-card border border-oled-border max-w-xl mx-auto mb-8 font-mono text-xs sm:text-sm">
-      <button class="os-tab flex-1 py-2 px-3 rounded-lg font-medium transition-all text-emerald-400 bg-emerald-500/15 border border-emerald-500/30" data-os="termux">
+    <!-- OS Switcher Tabs -->
+    <div class="flex items-center justify-center gap-2 p-1.5 rounded-xl bg-surface-card border border-surface-border max-w-xl mx-auto mb-8 font-mono text-xs sm:text-sm">
+      <button class="os-tab flex-1 py-2 px-3 rounded-lg font-medium transition-all text-brand-400 bg-brand-500/15 border border-brand-500/30" data-os="termux">
         1. Termux
       </button>
       <button class="os-tab flex-1 py-2 px-3 rounded-lg font-medium transition-all text-slate-400 hover:text-slate-200" data-os="linux">
@@ -532,79 +578,79 @@
     </div>
 
     <!-- OS Snippet Box -->
-    <div class="rounded-2xl glass-card border border-oled-border p-6 sm:p-8 shadow-2xl">
+    <div class="rounded-2xl enterprise-glass-card border border-surface-border p-6 sm:p-8 shadow-2xl">
       
       <!-- Termux Tab Content -->
       <div id="content-termux" class="os-content space-y-4">
-        <div class="flex items-center justify-between pb-3 border-b border-oled-border">
-          <span class="text-xs font-mono text-slate-400">Bước cài đặt trên Termux (Android):</span>
-          <span class="text-[11px] font-mono text-emerald-400 font-semibold">Node &gt;= 22.16 LTS</span>
+        <div class="flex items-center justify-between pb-3 border-b border-surface-border">
+          <span class="text-xs font-mono text-slate-400">Quy trình cài đặt trên Termux (Android):</span>
+          <span class="text-[11px] font-mono text-brand-400 font-semibold">Node.js &gt;= 22.16 LTS</span>
         </div>
-        <pre class="p-4 rounded-xl bg-[#070A11] border border-oled-border font-mono text-xs sm:text-sm text-slate-200 overflow-x-auto leading-relaxed"><code><span class="text-slate-500"># 1. Cài đặt các công cụ hệ thống cần thiết</span>
+        <pre class="p-4 rounded-xl bg-[#060910] border border-surface-border font-mono text-xs sm:text-sm text-slate-200 overflow-x-auto leading-relaxed"><code><span class="text-slate-500"># 1. Cài đặt các gói công cụ hệ thống cần thiết</span>
 pkg install nodejs-lts git bash ripgrep
 
 <span class="text-slate-500"># 2. Cài đặt Vyen CLI từ npm toàn cục</span>
 npm install -g @nguyenhuumanh/vyen
 
-<span class="text-slate-500"># 3. Chạy wizard cấu hình tương tác</span>
+<span class="text-slate-500"># 3. Khởi chạy wizard thiết lập tương tác</span>
 vyen setup</code></pre>
       </div>
 
       <!-- Linux Tab Content -->
       <div id="content-linux" class="os-content hidden space-y-4">
-        <div class="flex items-center justify-between pb-3 border-b border-oled-border">
-          <span class="text-xs font-mono text-slate-400">Bước cài đặt trên Linux (Debian, Ubuntu, Arch, Fedora):</span>
-          <span class="text-[11px] font-mono text-emerald-400 font-semibold">npm / pnpm / yarn / bun</span>
+        <div class="flex items-center justify-between pb-3 border-b border-surface-border">
+          <span class="text-xs font-mono text-slate-400">Quy trình cài đặt trên Linux (Debian, Ubuntu, Arch, Fedora):</span>
+          <span class="text-[11px] font-mono text-brand-400 font-semibold">npm / pnpm / yarn / bun</span>
         </div>
-        <pre class="p-4 rounded-xl bg-[#070A11] border border-oled-border font-mono text-xs sm:text-sm text-slate-200 overflow-x-auto leading-relaxed"><code><span class="text-slate-500"># Cài đặt Vyen qua npm</span>
-npm install -g @nguyenhuumanh/vyen
-
-<span class="text-slate-500"># Khởi chạy wizard thiết lập</span>
-vyen setup
-
-<span class="text-slate-500"># Mở giao diện TUI làm việc</span>
-vyen</code></pre>
-      </div>
-
-      <!-- macOS Tab Content -->
-      <div id="content-macos" class="os-content hidden space-y-4">
-        <div class="flex items-center justify-between pb-3 border-b border-oled-border">
-          <span class="text-xs font-mono text-slate-400">Bước cài đặt trên macOS (Apple Silicon / Intel):</span>
-          <span class="text-[11px] font-mono text-emerald-400 font-semibold">Darwin / Terminal / iTerm2</span>
-        </div>
-        <pre class="p-4 rounded-xl bg-[#070A11] border border-oled-border font-mono text-xs sm:text-sm text-slate-200 overflow-x-auto leading-relaxed"><code><span class="text-slate-500"># Cài đặt Vyen toàn cục</span>
-npm install -g @nguyenhuumanh/vyen
-
-<span class="text-slate-500"># Thiết lập cấu hình và chọn model</span>
-vyen setup
-
-<span class="text-slate-500"># Bắt đầu code với Vyen</span>
-vyen</code></pre>
-      </div>
-
-      <!-- Windows Tab Content -->
-      <div id="content-windows" class="os-content hidden space-y-4">
-        <div class="flex items-center justify-between pb-3 border-b border-oled-border">
-          <span class="text-xs font-mono text-slate-400">Bước cài đặt trên Windows (PowerShell / Windows Terminal):</span>
-          <span class="text-[11px] font-mono text-emerald-400 font-semibold">PowerShell 7+ hoặc Windows PowerShell</span>
-        </div>
-        <pre class="p-4 rounded-xl bg-[#070A11] border border-oled-border font-mono text-xs sm:text-sm text-slate-200 overflow-x-auto leading-relaxed"><code><span class="text-slate-500"># Cài đặt Vyen trong PowerShell</span>
+        <pre class="p-4 rounded-xl bg-[#060910] border border-surface-border font-mono text-xs sm:text-sm text-slate-200 overflow-x-auto leading-relaxed"><code><span class="text-slate-500"># Cài đặt Vyen toàn cục</span>
 npm install -g @nguyenhuumanh/vyen
 
 <span class="text-slate-500"># Chạy wizard tương tác thiết lập provider và model</span>
 vyen setup
 
-<span class="text-slate-500"># Mở giao diện coding agent</span>
+<span class="text-slate-500"># Bắt đầu làm việc</span>
 vyen</code></pre>
       </div>
 
-      <!-- Setup Wizard Highlights Box -->
-      <div class="mt-6 p-4 rounded-xl bg-oled-surface border border-oled-border text-xs text-slate-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
-          <span class="text-emerald-400 font-bold">💡 Mẹo nhanh:</span>
-          <span>Lệnh <code class="text-white font-mono bg-oled-card px-1.5 py-0.5 rounded">vyen setup</code> tự động kiểm tra model qua endpoint, mã hóa key quyền 0600 và lưu an toàn.</span>
+      <!-- macOS Tab Content -->
+      <div id="content-macos" class="os-content hidden space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-surface-border">
+          <span class="text-xs font-mono text-slate-400">Quy trình cài đặt trên macOS (Apple Silicon / Intel / Darwin):</span>
+          <span class="text-[11px] font-mono text-brand-400 font-semibold">Terminal / iTerm2 / Ghostty</span>
         </div>
-        <a href="https://github.com/tungsten321/Vyen-cli#thi%E1%BA%BFt-l%E1%BA%ADp-nhanh-vyen-setup-ho%E1%BA%B7c-vyen-init" target="_blank" rel="noopener noreferrer" class="text-emerald-400 hover:underline shrink-0 font-mono">
+        <pre class="p-4 rounded-xl bg-[#060910] border border-surface-border font-mono text-xs sm:text-sm text-slate-200 overflow-x-auto leading-relaxed"><code><span class="text-slate-500"># Cài đặt Vyen toàn cục</span>
+npm install -g @nguyenhuumanh/vyen
+
+<span class="text-slate-500"># Cấu hình API key &amp; chọn model</span>
+vyen setup
+
+<span class="text-slate-500"># Mở giao diện agent</span>
+vyen</code></pre>
+      </div>
+
+      <!-- Windows Tab Content -->
+      <div id="content-windows" class="os-content hidden space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-surface-border">
+          <span class="text-xs font-mono text-slate-400">Quy trình cài đặt trên Windows (PowerShell / Windows Terminal):</span>
+          <span class="text-[11px] font-mono text-brand-400 font-semibold">PowerShell 7+ hoặc Windows PowerShell</span>
+        </div>
+        <pre class="p-4 rounded-xl bg-[#060910] border border-surface-border font-mono text-xs sm:text-sm text-slate-200 overflow-x-auto leading-relaxed"><code><span class="text-slate-500"># Cài đặt Vyen trong PowerShell</span>
+npm install -g @nguyenhuumanh/vyen
+
+<span class="text-slate-500"># Chạy wizard hướng dẫn cấu hình</span>
+vyen setup
+
+<span class="text-slate-500"># Bắt đầu phiên làm việc</span>
+vyen</code></pre>
+      </div>
+
+      <!-- Setup Wizard Tips -->
+      <div class="mt-6 p-4 rounded-xl bg-surface-subtle border border-surface-border text-xs text-slate-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-brand-400 font-bold">💡 Kiến trúc:</span>
+          <span>Lệnh <code class="text-white font-mono bg-surface-card px-1.5 py-0.5 rounded">vyen setup</code> tự động kiểm tra model qua endpoint, mã hóa key quyền 0600 và lưu trữ an toàn.</span>
+        </div>
+        <a href="https://github.com/tungsten321/Vyen-cli#thi%E1%BA%BFt-l%E1%BA%ADp-nhanh-vyen-setup-ho%E1%BA%B7c-vyen-init" target="_blank" rel="noopener noreferrer" class="text-brand-400 hover:underline shrink-0 font-mono">
           Xem tài liệu chi tiết →
         </a>
       </div>
@@ -612,29 +658,29 @@ vyen</code></pre>
     </div>
   </section>
 
-  <!-- Interactive Changelog Timeline Section -->
-  <section id="changelog" class="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 z-10 border-t border-oled-border/50">
+  <!-- Interactive Version Changelog Section -->
+  <section id="changelog" class="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 z-10 border-t border-surface-border">
     <div class="text-center max-w-2xl mx-auto mb-16">
-      <h2 class="text-xs font-mono font-bold tracking-widest text-emerald-400 uppercase mb-3">Lịch Sử &amp; Nhật Ký Phát Triển</h2>
-      <p class="text-3xl sm:text-4xl font-bold tracking-tight text-white">Nhật Ký Phiên Bản (Changelog)</p>
-      <p class="mt-4 text-slate-400 text-base">Minh bạch toàn bộ lộ trình tiến hóa, các tính năng mới và bản vá bảo mật qua từng cột mốc phát hành.</p>
+      <h2 class="text-xs font-mono font-bold tracking-widest text-brand-400 uppercase mb-3">Nhật Ký Phiên Bản</h2>
+      <p class="text-3xl sm:text-4xl font-bold tracking-tight text-white">Lịch Sử Tiến Hóa (Changelog)</p>
+      <p class="mt-4 text-slate-400 text-base">Minh bạch toàn bộ lộ trình kiến trúc, các cải tiến và kiểm toán bảo mật qua từng phát hành.</p>
     </div>
 
     <!-- Timeline Container -->
-    <div class="relative pl-6 sm:pl-8 border-l-2 border-oled-border space-y-10">
+    <div class="relative pl-6 sm:pl-8 border-l-2 border-surface-border space-y-10">
       
       <!-- Release 0.5.0 (Current) -->
       <div class="relative group">
-        <span class="absolute -left-[31px] sm:-left-[39px] top-1.5 w-4 h-4 rounded-full bg-emerald-400 border-4 border-oled-bg shadow-lg shadow-emerald-500/50"></span>
-        <div class="p-6 rounded-2xl glass-card border border-emerald-500/40 shadow-xl space-y-3">
+        <span class="absolute -left-[31px] sm:-left-[39px] top-1.5 w-4 h-4 rounded-full bg-brand-400 border-4 border-surface-bg shadow-lg shadow-brand-500/50"></span>
+        <div class="p-6 rounded-2xl enterprise-glass-card border border-brand-500/40 shadow-xl space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-3">
               <span class="text-lg font-bold font-mono text-white">v0.5.0</span>
-              <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-mono font-semibold">Latest Release</span>
+              <span class="px-2 py-0.5 rounded bg-brand-500/20 text-emerald-300 text-xs font-mono font-semibold">Latest Release</span>
             </div>
             <span class="text-xs font-mono text-slate-400">Hiện tại · 2026-10</span>
           </div>
-          <p class="text-sm font-semibold text-emerald-400">Chuẩn hóa Headless Contract (R1.4) &amp; Tách Module src/events.ts</p>
+          <p class="text-sm font-semibold text-brand-400">Chuẩn hóa Headless Contract (R1.4) &amp; Tách Module src/events.ts</p>
           <ul class="text-xs sm:text-sm text-slate-300 space-y-2 list-disc list-inside leading-relaxed">
             <li>Bổ sung cờ <code class="text-emerald-300 font-mono">--output-format stream-json|text</code> với schema v1 có phiên bản chuẩn.</li>
             <li>Hỗ trợ <code class="text-emerald-300 font-mono">--json-schema &lt;schema&gt;</code> ép kiểu Structured Outputs qua Ajv validator (cơ chế fail-closed).</li>
@@ -646,8 +692,8 @@ vyen</code></pre>
 
       <!-- Release 0.4.0 -->
       <div class="relative group">
-        <span class="absolute -left-[31px] sm:-left-[39px] top-1.5 w-4 h-4 rounded-full bg-cyan-400 border-4 border-oled-bg"></span>
-        <div class="p-6 rounded-2xl glass-card border border-oled-border hover:border-cyan-500/40 transition-all space-y-3">
+        <span class="absolute -left-[31px] sm:-left-[39px] top-1.5 w-4 h-4 rounded-full bg-cyan-400 border-4 border-surface-bg"></span>
+        <div class="p-6 rounded-2xl enterprise-glass-card border border-surface-border hover:border-cyan-500/40 transition-all space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-3">
               <span class="text-lg font-bold font-mono text-white">v0.4.0</span>
@@ -668,8 +714,8 @@ vyen</code></pre>
 
       <!-- Release 0.3.1 -->
       <div class="relative group">
-        <span class="absolute -left-[31px] sm:-left-[39px] top-1.5 w-4 h-4 rounded-full bg-slate-500 border-4 border-oled-bg"></span>
-        <div class="p-6 rounded-2xl glass-card border border-oled-border hover:border-slate-500 transition-all space-y-3">
+        <span class="absolute -left-[31px] sm:-left-[39px] top-1.5 w-4 h-4 rounded-full bg-slate-500 border-4 border-surface-bg"></span>
+        <div class="p-6 rounded-2xl enterprise-glass-card border border-surface-border hover:border-slate-500 transition-all space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-3">
               <span class="text-lg font-bold font-mono text-white">v0.3.1</span>
@@ -687,8 +733,8 @@ vyen</code></pre>
 
       <!-- Release 0.3.0 -->
       <div class="relative group">
-        <span class="absolute -left-[31px] sm:-left-[39px] top-1.5 w-4 h-4 rounded-full bg-slate-600 border-4 border-oled-bg"></span>
-        <div class="p-6 rounded-2xl glass-card border border-oled-border hover:border-slate-600 transition-all space-y-3">
+        <span class="absolute -left-[31px] sm:-left-[39px] top-1.5 w-4 h-4 rounded-full bg-slate-600 border-4 border-surface-bg"></span>
+        <div class="p-6 rounded-2xl enterprise-glass-card border border-surface-border hover:border-slate-600 transition-all space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-3">
               <span class="text-lg font-bold font-mono text-white">v0.3.0</span>
@@ -709,25 +755,28 @@ vyen</code></pre>
     </div>
   </section>
 
-  <!-- Footer with Safe Area Inset -->
-  <footer class="relative border-t border-oled-border bg-oled-bg py-12 z-10 pb-[max(3rem,env(safe-area-inset-bottom))]">
+  <!-- Footer -->
+  <footer class="relative border-t border-surface-border bg-surface-bg py-12 z-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
       
       <!-- Brand & License -->
       <div class="flex items-center gap-3">
+        <div class="w-6 h-6 rounded-md overflow-hidden flex items-center justify-center">
+          <img src="assets/logo.svg" alt="Vyen Logo" class="w-full h-full object-contain">
+        </div>
         <span class="font-mono font-bold text-white tracking-tight flex items-center gap-1.5">
-          <span class="text-emerald-400">&gt;_</span> vyen
+          vyen
         </span>
         <span class="text-slate-600">·</span>
-        <span class="text-xs text-slate-400">Phát hành theo giấy phép <a href="https://github.com/tungsten321/Vyen-cli/blob/master/LICENSE" target="_blank" rel="noopener noreferrer" class="text-slate-300 hover:text-emerald-400 underline">MIT License</a></span>
+        <span class="text-xs text-slate-400">Phát hành theo giấy phép <a href="https://github.com/tungsten321/Vyen-cli/blob/master/LICENSE" target="_blank" rel="noopener noreferrer" class="text-slate-300 hover:text-brand-400 underline">MIT License</a></span>
       </div>
 
-      <!-- Footer Links -->
+      <!-- Links -->
       <div class="flex items-center gap-6 text-xs text-slate-400 font-mono">
-        <a href="https://github.com/tungsten321/Vyen-cli" target="_blank" rel="noopener noreferrer" class="hover:text-emerald-400 transition-colors">GitHub Repo</a>
-        <a href="https://www.npmjs.com/package/@nguyenhuumanh/vyen" target="_blank" rel="noopener noreferrer" class="hover:text-emerald-400 transition-colors">npm Package</a>
-        <a href="https://github.com/tungsten321/Vyen-cli/blob/master/docs/SPEC.md" target="_blank" rel="noopener noreferrer" class="hover:text-emerald-400 transition-colors">SPEC.md</a>
-        <a href="#" class="hover:text-emerald-400 transition-colors flex items-center gap-1">
+        <a href="https://github.com/tungsten321/Vyen-cli" target="_blank" rel="noopener noreferrer" class="hover:text-brand-400 transition-colors">GitHub Repo</a>
+        <a href="https://www.npmjs.com/package/@nguyenhuumanh/vyen" target="_blank" rel="noopener noreferrer" class="hover:text-brand-400 transition-colors">npm Package</a>
+        <a href="https://github.com/tungsten321/Vyen-cli/blob/master/docs/SPEC.md" target="_blank" rel="noopener noreferrer" class="hover:text-brand-400 transition-colors">SPEC.md</a>
+        <a href="#" class="hover:text-brand-400 transition-colors flex items-center gap-1">
           <span>Lên đầu trang</span>
           <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
         </a>
@@ -773,16 +822,16 @@ vyen</code></pre>
         btn.addEventListener('click', () => {
           currentPkg = btn.getAttribute('data-pkg');
           pkgBtns.forEach(b => {
-            b.classList.remove('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/40', 'font-semibold');
-            b.classList.add('bg-oled-card', 'text-slate-400');
+            b.classList.remove('bg-brand-500/20', 'text-brand-400', 'border-brand-500/40', 'font-semibold');
+            b.classList.add('bg-surface-card', 'text-slate-400');
           });
-          btn.classList.add('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/40', 'font-semibold');
-          btn.classList.remove('bg-oled-card', 'text-slate-400');
+          btn.classList.add('bg-brand-500/20', 'text-brand-400', 'border-brand-500/40', 'font-semibold');
+          btn.classList.remove('bg-surface-card', 'text-slate-400');
 
           const newCmd = pkgCommands[currentPkg] || pkgCommands.npm;
           if (installCmdCode) installCmdCode.textContent = newCmd;
           if (copyBtn) copyBtn.setAttribute('data-copy', newCmd);
-          showToast(`Đã chọn trình cài đặt: ${currentPkg}`);
+          showToast(`Trình cài đặt: ${currentPkg.toUpperCase()}`);
         });
       });
 
@@ -794,13 +843,13 @@ vyen</code></pre>
           try {
             await navigator.clipboard.writeText(textToCopy);
             copyText.textContent = 'Đã chép!';
-            copyBtn.classList.remove('bg-emerald-500/20', 'text-emerald-300');
-            copyBtn.classList.add('bg-emerald-500', 'text-oled-bg');
+            copyBtn.classList.remove('bg-brand-500/15', 'text-emerald-300');
+            copyBtn.classList.add('bg-brand-500', 'text-surface-bg');
             showToast('Đã chép lệnh cài đặt vào clipboard');
             setTimeout(() => {
               copyText.textContent = 'Sao chép (C)';
-              copyBtn.classList.remove('bg-emerald-500', 'text-oled-bg');
-              copyBtn.classList.add('bg-emerald-500/20', 'text-emerald-300');
+              copyBtn.classList.remove('bg-brand-500', 'text-surface-bg');
+              copyBtn.classList.add('bg-brand-500/15', 'text-emerald-300');
             }, 2000);
           } catch (err) {
             console.error('Clipboard copy failed:', err);
@@ -815,10 +864,10 @@ vyen</code></pre>
 
       function switchOSTab(targetOS, userTriggered = false) {
         osTabs.forEach(t => {
-          t.classList.remove('text-emerald-400', 'bg-emerald-500/15', 'border', 'border-emerald-500/30');
+          t.classList.remove('text-brand-400', 'bg-brand-500/15', 'border', 'border-brand-500/30');
           t.classList.add('text-slate-400');
           if (t.getAttribute('data-os') === targetOS) {
-            t.classList.add('text-emerald-400', 'bg-emerald-500/15', 'border', 'border-emerald-500/30');
+            t.classList.add('text-brand-400', 'bg-brand-500/15', 'border', 'border-brand-500/30');
             t.classList.remove('text-slate-400');
           }
         });
@@ -828,7 +877,7 @@ vyen</code></pre>
         if (targetContent) targetContent.classList.remove('hidden');
 
         if (userTriggered) {
-          showToast(`Đã chuyển tab hệ điều hành: ${targetOS.toUpperCase()}`);
+          showToast(`Hệ điều hành: ${targetOS.toUpperCase()}`);
         }
       }
 
@@ -841,7 +890,7 @@ vyen</code></pre>
       // Device detection via userAgent
       const ua = navigator.userAgent || '';
       let detectedOS = 'termux';
-      let osLabel = 'Android (Termux)';
+      let osLabel = 'Android (Termux First-Class)';
 
       if (/android/i.test(ua)) {
         detectedOS = 'termux';
@@ -859,7 +908,7 @@ vyen</code></pre>
 
       switchOSTab(detectedOS, false);
       if (deviceNotice) {
-        deviceNotice.innerHTML = `Đã phát hiện thiết bị: <strong class="text-emerald-300 font-mono">${osLabel}</strong> · Bấm phím <kbd class="px-1.5 py-0.5 rounded bg-oled-card border border-slate-700 text-emerald-400 font-mono text-xs">1-4</kbd> để chuyển đổi.`;
+        deviceNotice.innerHTML = `Phát hiện thiết bị: <strong class="text-brand-400 font-mono">${osLabel}</strong> · Bấm phím <kbd class="px-1.5 py-0.5 rounded bg-surface-card border border-slate-700 text-brand-400 font-mono text-xs">1-4</kbd> để chuyển đổi.`;
       }
 
       // 5. Multi-Scenario Terminal Playground
@@ -873,41 +922,41 @@ vyen</code></pre>
         autofix: {
           prompt: 'vyen -p "Sửa lỗi crash khi load config và chạy kiểm tra"',
           render: `
-            <div class="flex items-center gap-2 text-xs text-slate-400 bg-oled-bg/90 border border-oled-border px-3 py-1.5 rounded-lg w-fit">
-              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-              <span>Agent Thinking... <span class="text-slate-500">[effort: high | model: claude-3-7-sonnet | ctx: 14%]</span></span>
+            <div class="flex items-center gap-2 text-xs text-slate-400 bg-surface-subtle border border-surface-border px-3 py-1.5 rounded-lg w-fit">
+              <span class="w-2 h-2 rounded-full bg-brand-accent animate-pulse"></span>
+              <span>Autonomous Reasoning... <span class="text-slate-500">[effort: high | model: claude-3-7-sonnet | ctx: 14%]</span></span>
             </div>
-            <div class="pl-3 border-l-2 border-cyan-500/50 space-y-1">
-              <div class="text-cyan-400 font-semibold text-xs flex items-center gap-1.5">
+            <div class="pl-3 border-l-2 border-brand-accent/50 space-y-1">
+              <div class="text-brand-accent font-semibold text-xs flex items-center gap-1.5">
                 <span>● Tool Call:</span>
-                <code class="text-slate-200 bg-oled-card px-1.5 py-0.5 rounded">read_file path="src/config.ts"</code>
+                <code class="text-slate-200 bg-surface-card px-1.5 py-0.5 rounded">read_file path="src/config.ts"</code>
               </div>
               <div class="text-slate-400 text-xs">Đọc 240 dòng tệp cấu hình · Kiểm tra hàm loadProjectSettings</div>
             </div>
-            <div class="pl-3 border-l-2 border-emerald-500/50 space-y-2">
-              <div class="text-emerald-400 font-semibold text-xs flex items-center gap-1.5">
+            <div class="pl-3 border-l-2 border-brand-500/50 space-y-2">
+              <div class="text-brand-400 font-semibold text-xs flex items-center gap-1.5">
                 <span>● Tool Call:</span>
-                <code class="text-slate-200 bg-oled-card px-1.5 py-0.5 rounded">apply_patch path="src/config.ts"</code>
+                <code class="text-slate-200 bg-surface-card px-1.5 py-0.5 rounded">apply_patch path="src/config.ts"</code>
               </div>
-              <div class="rounded-lg bg-oled-bg/90 border border-oled-border p-3 font-mono text-xs space-y-1">
+              <div class="rounded-lg bg-[#060910] border border-surface-border p-3 font-mono text-xs space-y-1">
                 <div class="text-slate-500 select-none">@@ -42,3 +42,4 @@ function loadProjectSettings()</div>
                 <div class="text-rose-400 bg-rose-500/10 px-1 rounded">- const raw = readFileSync(settingsPath, 'utf8');</div>
-                <div class="text-emerald-300 bg-emerald-500/10 px-1 rounded">+ const raw = stripBom(readFileSync(settingsPath, 'utf8'));</div>
-                <div class="text-emerald-300 bg-emerald-500/10 px-1 rounded">+ if (!raw.trim()) return {};</div>
+                <div class="text-brand-400 bg-brand-500/10 px-1 rounded">+ const raw = stripBom(readFileSync(settingsPath, 'utf8'));</div>
+                <div class="text-brand-400 bg-brand-500/10 px-1 rounded">+ if (!raw.trim()) return {};</div>
               </div>
             </div>
             <div class="pl-3 border-l-2 border-amber-500/50 space-y-1.5">
               <div class="text-amber-400 font-semibold text-xs flex items-center gap-1.5">
                 <span>● Tool Call:</span>
-                <code class="text-slate-200 bg-oled-card px-1.5 py-0.5 rounded">bash command="npm test"</code>
+                <code class="text-slate-200 bg-surface-card px-1.5 py-0.5 rounded">bash command="npm test"</code>
               </div>
-              <div class="text-xs text-slate-300 bg-oled-bg/60 p-2 rounded border border-oled-border font-mono">
-                <span class="text-emerald-400 font-bold">✔ 393 tests passed</span> <span class="text-slate-400">(0 failures, 8 platform skips)</span> <span class="text-slate-500">· Duration: 1.4s</span>
+              <div class="text-xs text-slate-300 bg-[#060910] p-2 rounded border border-surface-border font-mono">
+                <span class="text-brand-400 font-bold">✔ 403 tests passed</span> <span class="text-slate-400">(0 failures, 8 platform skips)</span> <span class="text-slate-500">· Duration: 1.4s</span>
               </div>
             </div>
-            <div class="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex flex-wrap items-center justify-between gap-2">
+            <div class="p-3 rounded-lg bg-brand-500/10 border border-brand-500/30 text-emerald-300 text-xs flex flex-wrap items-center justify-between gap-2">
               <div class="flex items-center gap-2">
-                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                 <span class="font-semibold">Hoàn tất xử lý yêu cầu!</span> Đã vá lỗi strip BOM và toàn bộ test suite vượt qua an toàn.
               </div>
               <div class="text-slate-400 font-mono text-[11px]">Tokens: 1,420 prompt · 280 completion · Thời gian: 2.8s</div>
@@ -918,17 +967,17 @@ vyen</code></pre>
           prompt: 'vyen -p "Trích xuất danh sách module" --output-format stream-json --json-schema schema.json',
           render: `
             <div class="space-y-2 text-xs font-mono">
-              <div class="text-slate-400 bg-oled-bg/90 p-2 rounded border border-oled-border">
-                <span class="text-cyan-400">{"type":"session","version":"v1","sessionId":"b82c-49a1","timestamp":"2026-11-01T04:00:00Z"}</span>
+              <div class="text-slate-400 bg-[#060910] p-2.5 rounded border border-surface-border">
+                <span class="text-brand-accent">{"type":"session","version":"v1","sessionId":"b82c-49a1","timestamp":"2026-11-01T04:00:00Z"}</span>
               </div>
-              <div class="text-slate-400 bg-oled-bg/90 p-2 rounded border border-oled-border">
+              <div class="text-slate-400 bg-[#060910] p-2.5 rounded border border-surface-border">
                 <span class="text-amber-400">{"type":"tool","name":"list_files","state":"done","meta":{"kind":"read","summary":"Scan src/*.ts"}}</span>
               </div>
-              <div class="p-3 rounded-xl bg-oled-card border border-emerald-500/40 text-emerald-300 space-y-1">
+              <div class="p-3 rounded-xl bg-surface-card border border-brand-500/40 text-emerald-300 space-y-1">
                 <div class="text-xs font-bold text-white flex items-center gap-2">
-                  <span class="text-emerald-400">✔ Event done.structuredOutput (Validated by Ajv):</span>
+                  <span class="text-brand-400">✔ Event done.structuredOutput (Validated by Ajv):</span>
                 </div>
-                <pre class="text-[11px] text-slate-300 overflow-x-auto p-2 bg-oled-bg/80 rounded"><code>{
+                <pre class="text-[11px] text-slate-300 overflow-x-auto p-2 bg-[#060910] rounded border border-surface-border"><code>{
   "totalModules": 33,
   "phase": "Phase 1 Complete",
   "headlessContract": "v1",
@@ -941,13 +990,13 @@ vyen</code></pre>
         pair: {
           prompt: 'vyen /pair',
           render: `
-            <div class="p-4 rounded-xl bg-oled-bg/90 border border-oled-border font-mono text-xs space-y-3">
-              <div class="text-emerald-400 font-bold flex items-center gap-2">
+            <div class="p-4 rounded-xl bg-[#060910] border border-surface-border font-mono text-xs space-y-3">
+              <div class="text-brand-400 font-bold flex items-center gap-2">
                 <span>⚡ Cloudflared Secure Pair Tunnel Khởi Động:</span>
               </div>
-              <div class="bg-black/60 p-3 rounded border border-oled-border text-center space-y-1">
-                <div class="text-[10px] text-slate-400">Mã QR ASCII Ghép Đôi Điện Thoại / Thiết Bị Phụ:</div>
-                <pre class="text-[9px] sm:text-[10px] text-emerald-400 leading-none inline-block">
+              <div class="bg-black/60 p-3 rounded border border-surface-border text-center space-y-1">
+                <div class="text-[10px] text-slate-400">Mã QR ASCII Ghép Đôi Thiết Bị Di Động:</div>
+                <pre class="text-[9px] sm:text-[10px] text-brand-400 leading-none inline-block">
 ██████████████  ██    ██████████████
 ██          ██  ██    ██          ██
 ██  ██████  ██    ██  ██  ██████  ██
@@ -956,9 +1005,9 @@ vyen</code></pre>
                 </pre>
               </div>
               <div class="text-slate-300 space-y-1 text-xs">
-                <div>URL ghép đôi: <code class="text-cyan-300 underline">https://vyen-pair-82a1.trycloudflare.com</code></div>
+                <div>URL ghép đôi: <code class="text-brand-accent underline">https://vyen-pair-82a1.trycloudflare.com</code></div>
                 <div>Token xác thực: <code class="text-amber-300">128-bit session token (Hết hạn sau 30m)</code></div>
-                <div class="text-slate-400 text-[11px]">Quyền an toàn: Từ xa không kích hoạt auto-approve hoặc !cmd tùy ý.</div>
+                <div class="text-slate-400 text-[11px]">Cơ chế an toàn: Từ xa không kích hoạt auto-approve hoặc !cmd tùy ý.</div>
               </div>
             </div>
           `
@@ -966,7 +1015,7 @@ vyen</code></pre>
         failclosed: {
           prompt: 'vyen -p "Tải và chạy script lạ từ internet vào workspace"',
           render: `
-            <div class="p-4 rounded-xl bg-oled-bg/90 border border-rose-500/40 text-xs font-mono space-y-3">
+            <div class="p-4 rounded-xl bg-[#060910] border border-rose-500/40 text-xs font-mono space-y-3">
               <div class="text-rose-400 font-bold flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                 <span>CHẶN THỰC THI (Fail-Closed Security):</span>
@@ -977,7 +1026,7 @@ vyen</code></pre>
                 <div>Mã thoát: <code class="text-rose-400 font-bold">exitCode = 2 (Permission Denied)</code></div>
               </div>
               <div class="p-2.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-300 text-[11px]">
-                Quy tắc bảo mật của Vyen chặn đứng toàn bộ lệnh chuỗi nguy hiểm và không bao giờ rò rỉ API key ra biến môi trường con.
+                Chính sách bảo mật của Vyen chặn đứng toàn bộ lệnh chuỗi nguy hiểm và không bao giờ rò rỉ credential ra môi trường shell con.
               </div>
             </div>
           `
@@ -997,11 +1046,11 @@ vyen</code></pre>
 
         scenarioBtns.forEach(btn => {
           if (btn.getAttribute('data-scenario') === scenarioKey) {
-            btn.classList.add('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/40', 'font-medium');
-            btn.classList.remove('bg-oled-surface', 'text-slate-400');
+            btn.classList.add('bg-brand-500/20', 'text-brand-400', 'border-brand-500/40', 'font-medium');
+            btn.classList.remove('bg-surface-subtle', 'text-slate-400');
           } else {
-            btn.classList.remove('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/40', 'font-medium');
-            btn.classList.add('bg-oled-surface', 'text-slate-400');
+            btn.classList.remove('bg-brand-500/20', 'text-brand-400', 'border-brand-500/40', 'font-medium');
+            btn.classList.add('bg-surface-subtle', 'text-slate-400');
           }
         });
 
@@ -1010,16 +1059,16 @@ vyen</code></pre>
           if (idx < scen.prompt.length) {
             promptElement.textContent += scen.prompt.charAt(idx);
             idx++;
-            typingTimer = setTimeout(typeChar, 30);
+            typingTimer = setTimeout(typeChar, 25);
           } else {
             typingTimer = setTimeout(() => {
               streamContent.innerHTML = scen.render;
               streamContent.style.opacity = '1';
               streamContent.style.pointerEvents = 'auto';
-            }, 250);
+            }, 200);
           }
         }
-        typingTimer = setTimeout(typeChar, 300);
+        typingTimer = setTimeout(typeChar, 200);
       }
 
       scenarioBtns.forEach(btn => {
@@ -1040,8 +1089,8 @@ vyen</code></pre>
           if (typingTimer) clearTimeout(typingTimer);
           promptElement.textContent = cmd;
           streamContent.innerHTML = `
-            <div class="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs">
-              Đang mô phỏng lệnh: <code class="font-bold">${cmd}</code>... Vui lòng mở terminal để trải nghiệm trực tiếp!
+            <div class="p-3 rounded-lg bg-brand-500/10 border border-brand-500/30 text-emerald-300 text-xs">
+              Mô phỏng lệnh: <code class="font-bold text-white">${cmd}</code>... Mở terminal thực tế để chạy!
             </div>
           `;
           streamContent.style.opacity = '1';
@@ -1049,7 +1098,7 @@ vyen</code></pre>
         });
       });
 
-      // 6. Keyboard Shortcuts Handler
+      // 6. Global Keyboard Shortcuts Handler
       document.addEventListener('keydown', (e) => {
         if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
 
@@ -1063,6 +1112,8 @@ vyen</code></pre>
           switchOSTab('macos', true);
         } else if (e.key === '4') {
           switchOSTab('windows', true);
+        } else if (e.key === 'r' || e.key === 'R') {
+          if (replayBtn) replayBtn.click();
         }
       });
 

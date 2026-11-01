@@ -1,0 +1,62 @@
+<svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Smooth Neon Gradient: Emerald (#00E599) to Cyan (#00F0FF) -->
+    <linearGradient id="vyenBrandGrad" x1="130" y1="365" x2="375" y2="145" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00E599" />
+      <stop offset="35%" stop-color="#00D2B4" />
+      <stop offset="70%" stop-color="#00B8D9" />
+      <stop offset="100%" stop-color="#00F0FF" />
+    </linearGradient>
+
+    <!-- Neon Glow Filter -->
+    <filter id="vyenGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur1" />
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur1" opacity="0.65" />
+        <feMergeNode in="blur2" opacity="0.85" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- High-Precision Vector Geometry of Vyen Logo -->
+  <g filter="url(#vyenGlow)">
+    
+    <!-- 1. Left Command Prompt Chevron '>' -->
+    <path d="
+      M 142 208
+      L 226 256
+      L 142 304
+      L 142 272
+      L 194 256
+      L 142 240
+      Z
+    " fill="url(#vyenBrandGrad)" stroke="url(#vyenBrandGrad)" stroke-width="2" stroke-linejoin="round" />
+
+    <!-- 2. Upper-Left Segment of 'V' -->
+    <path d="
+      M 142 155
+      L 208 155
+      L 256 242
+      L 230 256
+      L 174 179
+      L 142 179
+      Z
+    " fill="url(#vyenBrandGrad)" stroke="url(#vyenBrandGrad)" stroke-width="2" stroke-linejoin="round" />
+
+    <!-- 3. Lower Apex & Right Arm of 'V' (Cleaned, without stray block) -->
+    <path d="
+      M 370 155
+      L 256 358
+      L 214 290
+      L 236 276
+      L 256 308
+      L 338 179
+      L 304 179
+      L 304 155
+      Z
+    " fill="url(#vyenBrandGrad)" stroke="url(#vyenBrandGrad)" stroke-width="2" stroke-linejoin="round" />
+
+  </g>
+</svg>
