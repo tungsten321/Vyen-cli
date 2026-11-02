@@ -154,6 +154,17 @@ test('provider credentials never reach child processes', async t => {
   assert.equal(childEnv({ OPENAI_API_KEY: 'sk-123' }).OPENAI_API_KEY, undefined);
   assert.equal(childEnv({ GITHUB_TOKEN: 'ghp_abc' }).GITHUB_TOKEN, undefined);
   assert.equal(childEnv({ anthropic_api_key: 'sk-ant-456' }).anthropic_api_key, undefined);
+  assert.equal(childEnv({ DEEPSEEK_API_KEY: 'sk-deep' }).DEEPSEEK_API_KEY, undefined);
+  assert.equal(childEnv({ GROQ_API_KEY: 'gsk-123' }).GROQ_API_KEY, undefined);
+  assert.equal(childEnv({ MISTRAL_API_KEY: 'mis-123' }).MISTRAL_API_KEY, undefined);
+  assert.equal(childEnv({ COHERE_API_KEY: 'coh-123' }).COHERE_API_KEY, undefined);
+  assert.equal(childEnv({ HF_TOKEN: 'hf_123' }).HF_TOKEN, undefined);
+  assert.equal(childEnv({ NPM_TOKEN: 'npm_123' }).NPM_TOKEN, undefined);
+  assert.equal(childEnv({ SLACK_BOT_TOKEN: 'xoxb-123' }).SLACK_BOT_TOKEN, undefined);
+  assert.equal(childEnv({ AWS_ACCESS_KEY_ID: 'AKIA123' }).AWS_ACCESS_KEY_ID, undefined);
+  assert.equal(childEnv({ AWS_SESSION_TOKEN: 'sess-123' }).AWS_SESSION_TOKEN, undefined);
+  assert.equal(childEnv({ GITLAB_TOKEN: 'glpat-123' }).GITLAB_TOKEN, undefined);
+  assert.equal(childEnv({ MYSQL_URL: 'mysql://root:pw@localhost/db' }).MYSQL_URL, undefined);
   const registry = new ToolRegistry(f.cwd, async () => true);
   const out = await registry.execute({ toolCallId: '1', toolName: 'bash', input: { command: 'echo "[$VYEN_API_KEY][$CUSTOM_PROVIDER_KEY][${PATH:+path}]"' } }, signal());
   assert.match(out.text, /\[\]\[\]\[path\]/);

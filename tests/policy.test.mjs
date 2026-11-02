@@ -720,4 +720,55 @@ test('bash deny rules strip dash, zsh, ksh, and busybox wrappers', () => {
   assert.equal(evaluateToolPolicy({ tool: 'bash', input: { command: 'busybox sh -c "rm -rf /"' } }, ctx), 'deny');
 });
 
+test('bash deny rules strip absolute path wrappers (nohup, timeout, nice, setsid, time, stdbuf, xargs)', () => {
+  const ctx = {
+    projectRules: {
+      deny: ['bash(rm *)'],
+    },
+  };
+
+  assert.equal(evaluateToolPolicy({ tool: 'bash', input: { command: '/usr/bin/timeout 10 rm -rf /' } }, ctx), 'deny');
+  assert.equal(evaluateToolPolicy({ tool: 'bash', input: { command: '/usr/bin/nohup rm -rf /' } }, ctx), 'deny');
+  assert.equal(evaluateToolPolicy({ tool: 'bash', input: { command: '/usr/bin/nice -n 10 rm -rf /' } }, ctx), 'deny');
+  assert.equal(evaluateToolPolicy({ tool: 'bash', input: { command: '/bin/setsid rm -rf /' } }, ctx), 'deny');
+  assert.equal(evaluateToolPolicy({ tool: 'bash', input: { command: '/usr/bin/time rm -rf /' } }, ctx), 'deny');
+  assert.equal(evaluateToolPolicy({ tool: 'bash', input: { command: '/usr/bin/stdbuf -oL rm -rf /' } }, ctx), 'deny');
+  assert.equal(evaluateToolPolicy({ tool: 'bash', input: { command: '/usr/bin/xargs rm -rf /' } }, ctx), 'deny');
+});
+
+test('wildcard allow rules cannot auto-approve argument-driven commands behind wrappers', () => {
+  const ctxSudo = {
+    projectRules: {
+      allow: ['bash(sudo *)'],
+    },
+  };
+  assert.notEqual(
+    evaluateToolPolicy({ tool: 'bash', input: { command: 'sudo rm -rf /' } }, ctxSudo),
+    'allow',
+    'sudo rm -rf / must not be auto-approved by bash(sudo *)'
+  );
+  assert.notEqual(
+    evaluateToolPolicy({ tool: 'bash', input: { command: 'sudo {rm,-rf,/}' } }, ctxSudo),
+    'allow',
+    'sudo {rm,-rf,/} must not be auto-approved by bash(sudo *)'
+  );
+  assert.notEqual(
+    evaluateToolPolicy({ tool: 'bash', input: { command: 'sudo [r]m -rf /' } }, ctxSudo),
+    'allow',
+    'sudo [r]m -rf / must not be auto-approved by bash(sudo *)'
+  );
+
+  const ctxEnv = {
+    projectRules: {
+      allow: ['bash(env *)'],
+    },
+  };
+  assert.notEqual(
+    evaluateToolPolicy({ tool: 'bash', input: { command: 'env rm -rf /' } }, ctxEnv),
+    'allow',
+    'env rm -rf / must not be auto-approved by bash(env *)'
+  );
+});
+
+
 

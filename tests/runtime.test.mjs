@@ -781,4 +781,26 @@ test('normalizeToolInput maps standard snake_case arguments for edit_file and ba
     targets: ['agent-1'],
     timeout_ms: 5000,
   });
+
+  const writeNormalized = normalizeToolInput('write_file', {
+    file_path: 'foo.ts',
+    text: 'export const x = 1;',
+  });
+  assert.deepEqual(writeNormalized, {
+    path: 'foo.ts',
+    content: 'export const x = 1;',
+  });
+
+  assert.deepEqual(
+    normalizeToolInput('write_file', { path: 'b.ts', file_content: 'content b' }),
+    { path: 'b.ts', content: 'content b' }
+  );
+  assert.deepEqual(
+    normalizeToolInput('write_file', { path: 'c.ts', body: 'content c' }),
+    { path: 'c.ts', content: 'content c' }
+  );
+  assert.deepEqual(
+    normalizeToolInput('write_file', { path: 'd.ts', contents: 'content d' }),
+    { path: 'd.ts', content: 'content d' }
+  );
 });

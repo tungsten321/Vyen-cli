@@ -560,7 +560,7 @@ export class Subagents {
       await store?.close();
     } catch (error) {
       failure ??= { error };
-      managed.lastError = safeError(error, childConfig.apiKey);
+      managed.lastError ??= safeError(error, childConfig.apiKey);
       if ((managed.status as string) !== 'shutdown') {
         managed.status = 'errored';
       }

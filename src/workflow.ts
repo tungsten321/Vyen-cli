@@ -608,7 +608,24 @@ export async function executeWorkflow(
 
       if (step.type === 'approval') {
         const msg = interp(step.message ?? step.prompt ?? `Approve workflow step "${stepTitle}"?`);
-        const ok = hooks.confirmStep ? await hooks.confirmStep(msg, hooks.signal) : true;
+        if (!hooks.confirmStep) {
+          results.push({
+            id: step.id,
+            title: stepTitle,
+            type: step.type,
+            status: 'skipped',
+            output: 'Aborted at approval gate: no approval handler provided.',
+            durationMs: Date.now() - started,
+          });
+          hooks.onProgress?.(`╰─── Workflow "${workflow.name}" stopped at approval gate (no approval handler) ───╯\n`);
+          return {
+            workflow: workflow.name,
+            status: 'aborted',
+            steps: results,
+            finalOutput: prevOutput,
+          };
+        }
+        const ok = await hooks.confirmStep(msg, hooks.signal);
         if (!ok) {
           results.push({
             id: step.id,

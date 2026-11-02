@@ -19,7 +19,6 @@
 
   <!-- Favicons -->
   <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 
   <!-- Structured Data JSON-LD (SoftwareApplication) -->
   <script type="application/ld+json">
@@ -151,8 +150,15 @@
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
     }
-    button, .tappable, header a, nav a, .os-tab, .scenario-btn, .pkg-btn, .cmd-pill, #scroll-top-btn, .copy-btn {
-      min-height: 44px;
+    /* Touch & Mobile UX Controls (WCAG 2.2 AA Target Size >= 44x44px for touch interfaces) */
+    @media (pointer: coarse) {
+      .tappable, .os-tab, .scenario-btn, .pkg-btn, #scroll-top-btn, #mobile-menu-btn, .copy-command {
+        min-height: 44px;
+      }
+    }
+    /* Compact utility buttons on desktop/pointer devices */
+    .btn-compact, .snippet-copy-btn, #copy-terminal-prompt-btn, #refresh-commits-btn, .cmd-pill {
+      min-height: auto;
     }
     /* Exempt inline text links from 44px min-height to preserve typography flow */
     p a, li a, span a, td a, footer a.underline {
@@ -212,7 +218,7 @@
 
   <!-- Global Action Toast Notification with A11y live region -->
   <div id="shortcut-toast" role="status" aria-live="polite" class="fixed bottom-6 left-4 sm:left-6 z-50 transform translate-y-16 opacity-0 transition-all duration-300 pointer-events-none enterprise-glass border border-brand-500/40 text-emerald-300 text-xs font-mono px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3">
-    <span class="w-2 h-2 rounded-full bg-brand-400 animate-pulse" aria-hidden="true"></span>
+    <span class="w-2 h-2 rounded-full bg-brand-400" aria-hidden="true"></span>
     <span id="shortcut-toast-msg">Lệnh đã được kích hoạt</span>
   </div>
 
@@ -327,7 +333,7 @@
     <div class="relative w-full max-w-md p-6 rounded-2xl enterprise-glass border border-brand-500/40 shadow-2xl space-y-5 z-10">
       <div class="flex items-center justify-between pb-3 border-b border-surface-border">
         <h3 id="shortcuts-modal-title" class="font-mono font-bold text-base text-white flex items-center gap-2">
-          <span class="text-brand-400">⚡</span> Phím tắt điều hướng nhanh
+          <svg class="w-4 h-4 text-brand-400 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Phím tắt điều hướng nhanh
         </h3>
         <button id="shortcuts-modal-close" aria-label="Đóng bảng phím tắt" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-surface-card transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -370,59 +376,48 @@
 
   <main id="main-content" tabindex="-1" class="outline-none">
     <!-- Hero Section -->
-    <section class="relative pt-10 pb-16 md:pt-16 md:pb-24 z-10" aria-label="Giới thiệu Vyen CLI">
+    <section class="relative pt-12 pb-16 md:pt-20 md:pb-24 z-10" aria-label="Giới thiệu Vyen CLI">
       <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         
-        <!-- Centerpiece Hero Logo (Refined, Compact, Above-the-fold Optimized) -->
-        <div class="flex justify-center mb-6">
-          <div class="relative group">
-            <!-- Radiant Ambient Glow Aura behind Logo -->
-            <div class="absolute -inset-4 bg-gradient-to-r from-emerald-500/25 via-teal-500/20 to-cyan-500/25 rounded-full blur-2xl opacity-75 group-hover:opacity-100 transition duration-500" aria-hidden="true"></div>
-            <!-- Logo Emblem Container -->
-            <div class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#090E17]/95 border border-brand-500/30 hover:border-brand-500/60 p-3 sm:p-3.5 flex items-center justify-center shadow-xl backdrop-blur-2xl group-hover:scale-105 transition-all duration-300">
-              <img src="assets/logo.svg" alt="Biểu trưng chính thức Vyen CLI" width="60" height="60" class="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(0,240,255,0.35)]">
-            </div>
-          </div>
-        </div>
-
         <!-- Release Announcement Pill -->
-        <a href="#changelog" class="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-brand-500/10 border border-brand-500/25 hover:border-brand-500/50 text-emerald-300 text-xs sm:text-sm font-medium mb-8 transition-all hover:scale-[1.01] shadow-lg shadow-brand-500/5 active:scale-[0.98]">
-          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-500 text-surface-bg tracking-wide uppercase">MỚI</span>
-          <span>Vyen v0.5.0: Headless Architecture &amp; Structured Outputs Schema</span>
-          <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <a href="#changelog" class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-surface-card border border-surface-border hover:border-brand-500/40 text-slate-300 text-xs sm:text-sm font-medium mb-8 transition-all hover:scale-[1.01] active:scale-[0.98]">
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-brand-500/15 text-brand-400 border border-brand-500/30 tracking-wide uppercase">v0.5.0</span>
+          <span>Headless Architecture &amp; Structured Outputs Schema</span>
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </a>
 
         <!-- Headline -->
         <h1 class="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.08] mb-6">
           AI Coding Agent Độc Lập <br class="hidden sm:inline">
-          <span class="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
-            Cho Kỹ Sư Phần Mềm Hiện Đại
-          </span>
+          <span class="text-slate-300">Cho Termux &amp; Đa Nền Tảng</span>
         </h1>
 
         <!-- Subtitle -->
         <p class="max-w-3xl mx-auto text-base sm:text-lg md:text-xl text-slate-300 leading-relaxed mb-10">
-          Xây dựng theo chuẩn kỹ nghệ tối giản, hiệu năng cao và bảo mật nghiêm ngặt. Ưu tiên hàng đầu cho <strong class="text-white font-semibold">Termux trên Android</strong> và tương thích hoàn toàn Linux, macOS, Windows. Sử dụng API key của riêng bạn (BYOK), cơ chế phân quyền Fail-Closed và không phụ thuộc dịch vụ trung gian.
+          Nền tảng coding agent độc lập, hiệu năng cao và bảo mật nghiêm ngặt. Tối ưu hàng đầu cho <strong class="text-white font-semibold">Termux trên Android</strong> và tương thích hoàn toàn Linux, macOS, Windows. Sử dụng API key cá nhân (BYOK), cơ chế phân quyền Fail-Closed và không phụ thuộc dịch vụ trung gian.
         </p>
 
-        <!-- Architecture Metrics Bar -->
+        <!-- Architecture Metrics Bar (Clean vector SVG icons, no emoji) -->
         <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 mb-10 text-xs font-mono text-slate-300">
           <span class="px-3 py-2 rounded-xl bg-surface-subtle border border-surface-border flex items-center gap-2 shadow-sm">
             <span class="w-2 h-2 rounded-full bg-brand-400" aria-hidden="true"></span> 0 Native Addons
           </span>
           <span class="px-3 py-2 rounded-xl bg-surface-subtle border border-surface-border flex items-center gap-2 shadow-sm">
-            <span class="text-brand-400 font-bold" aria-hidden="true">⚡</span> Termux Native First-Class
+            <svg class="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span>Termux Native First-Class</span>
           </span>
           <span class="px-3 py-2 rounded-xl bg-surface-subtle border border-surface-border flex items-center gap-2 shadow-sm">
-            <span class="text-brand-accent font-bold" aria-hidden="true">🔑</span> 100% BYOK Freedom
+            <svg class="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+            <span>100% BYOK Freedom</span>
           </span>
           <span class="px-3 py-2 rounded-xl bg-surface-subtle border border-surface-border flex items-center gap-2 shadow-sm">
-            <span class="text-amber-400 font-bold" aria-hidden="true">🛡️</span> 8 Fail-Closed Hooks
+            <svg class="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            <span>8 Fail-Closed Hooks</span>
           </span>
         </div>
 
         <!-- Installation Widget with Package Manager Selector -->
-        <div class="max-w-2xl mx-auto mb-10">
+        <div class="max-w-2xl mx-auto mb-4">
           
           <!-- Package Switcher -->
           <div class="flex items-center justify-center gap-1.5 mb-3 font-mono text-xs" role="group" aria-label="Chọn trình quản lý gói">
@@ -448,16 +443,6 @@
           <p class="mt-2.5 text-xs text-slate-400 font-mono">
             Yêu cầu Node.js &gt;= 22.16 LTS · Mã nguồn biên dịch sẵn · Tương thích tức thì
           </p>
-        </div>
-
-        <!-- Action CTAs -->
-        <div class="flex flex-wrap items-center justify-center gap-4">
-          <a href="#quickstart" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-surface-bg font-bold text-sm transition-all shadow-lg shadow-brand-500/20 hover:scale-[1.01] active:scale-[0.98]">
-            Bắt đầu thiết lập ngay →
-          </a>
-          <a href="#terminal-demo" class="px-6 py-3.5 rounded-xl bg-surface-subtle hover:bg-surface-card border border-surface-border text-slate-200 font-semibold text-sm transition-all hover:border-slate-500 active:scale-[0.98]">
-            Xem kịch bản hoạt động
-          </a>
         </div>
 
       </div>
@@ -534,9 +519,9 @@
         <!-- Terminal Status Bar -->
         <div class="px-5 py-2.5 bg-[#060910] border-t border-surface-border flex flex-wrap items-center justify-between text-[11px] font-mono text-slate-400">
           <div class="flex items-center gap-4">
-            <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-brand-400" aria-hidden="true"></span> Engine: Active</span>
-            <span>Tokens: <strong class="text-slate-300">1,420</strong></span>
-            <span>Decision: <strong class="text-brand-400">Approved</strong></span>
+            <span class="flex items-center gap-1.5"><span id="terminal-status-dot" class="w-1.5 h-1.5 rounded-full bg-brand-400" aria-hidden="true"></span> Engine: Active</span>
+            <span>Tokens: <strong id="terminal-status-tokens" class="text-slate-300">1,420</strong></span>
+            <span>Decision: <strong id="terminal-status-decision" class="text-brand-400 font-bold">Approved</strong></span>
           </div>
           <div class="text-slate-500 hidden sm:block">
             Quy trình độc lập · Kiểm toán JSONL cục bộ
@@ -559,8 +544,8 @@
     <!-- Core Architectural Pillars Section (Bento Grid) -->
     <section id="features" class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 z-10 border-t border-surface-border" aria-label="Kiến trúc và các trụ cột">
       <div class="text-center max-w-3xl mx-auto mb-16">
-        <h2 class="text-xs font-mono font-bold tracking-widest text-brand-400 uppercase mb-3">Kiến Trúc &amp; Nền Tảng</h2>
-        <p class="text-3xl sm:text-4xl font-bold tracking-tight text-white">4 Trụ Cột Kỹ Thuật Độc Bản</p>
+        <h2 class="text-xs font-mono font-bold tracking-widest text-brand-400 uppercase mb-3">Kiến Trúc Hệ Thống</h2>
+        <p class="text-3xl sm:text-4xl font-bold tracking-tight text-white">Nguyên Lý Thiết Kế Cốt Lõi</p>
         <p class="mt-4 text-slate-400 text-base">Được thiết kế cho các kỹ sư đòi hỏi sự chính xác tuyệt đối, tốc độ thực thi tại biên và tính toàn vẹn hệ thống.</p>
       </div>
 
@@ -572,7 +557,7 @@
             <div class="w-12 h-12 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400 group-hover:scale-105 transition-transform" aria-hidden="true">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
             </div>
-            <span class="px-2.5 py-1 rounded-md bg-brand-500/15 text-emerald-300 font-mono text-xs font-semibold">Termux First-Class</span>
+            <span class="px-2.5 py-1 rounded-md bg-surface-card border border-surface-border text-slate-300 font-mono text-xs font-medium">Termux First-Class</span>
           </div>
           <h3 class="text-xl font-bold text-white mb-3">Tối Ưu Native Cho Termux Trên Android</h3>
           <p class="text-slate-300 text-sm leading-relaxed mb-4">
@@ -588,57 +573,57 @@
         <!-- Pillar 2: Bring Your Own Key & Multi-Provider -->
         <div class="relative p-7 sm:p-8 rounded-2xl enterprise-glass-card group">
           <div class="flex items-center justify-between mb-6">
-            <div class="w-12 h-12 rounded-xl bg-brand-accent/10 border border-brand-accent/30 flex items-center justify-center text-brand-accent group-hover:scale-105 transition-transform" aria-hidden="true">
+            <div class="w-12 h-12 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400 group-hover:scale-105 transition-transform" aria-hidden="true">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
             </div>
-            <span class="px-2.5 py-1 rounded-md bg-brand-accent/15 text-cyan-300 font-mono text-xs font-semibold">BYOK Freedom</span>
+            <span class="px-2.5 py-1 rounded-md bg-surface-card border border-surface-border text-slate-300 font-mono text-xs font-medium">BYOK Freedom</span>
           </div>
           <h3 class="text-xl font-bold text-white mb-3">Bring Your Own Key &amp; Tự Do Đa Provider</h3>
           <p class="text-slate-300 text-sm leading-relaxed mb-4">
-            Loại bỏ hoàn toàn chi phí thuê bao cố định và rủi ro bị khóa chặt vào một nhà cung cấp. Bạn toàn quyền sử dụng API key cá nhân để kết nối trực tiếp với các mô hình tiên tiến nhất.
+            Loại bỏ hoàn toàn chi phí thuê bao cố định và rủi ro bị khóa chặt vào một nhà cung cấp. Bạn toàn quyền sử dụng API key cá nhân để kết nối trực tiếp với các mô hình tiên tiến nhất (OpenAI, Anthropic, Gemini, Groq, local LLM).
           </p>
           <ul class="text-xs text-slate-400 space-y-2 font-mono">
-            <li class="flex items-center gap-2"><span class="text-brand-accent font-bold" aria-hidden="true">✓</span> Tương thích OpenAI, Responses API chuẩn mực và Anthropic Messages</li>
-            <li class="flex items-center gap-2"><span class="text-brand-accent font-bold" aria-hidden="true">✓</span> Hỗ trợ suy luận cục bộ ngoại tuyến qua Ollama, vLLM, LM Studio</li>
-            <li class="flex items-center gap-2"><span class="text-brand-accent font-bold" aria-hidden="true">✓</span> Tự động khám phá danh mục model linh hoạt qua lệnh /models</li>
+            <li class="flex items-center gap-2"><span class="text-brand-400 font-bold" aria-hidden="true">✓</span> Tương thích OpenAI, Responses API chuẩn mực và Anthropic Messages</li>
+            <li class="flex items-center gap-2"><span class="text-brand-400 font-bold" aria-hidden="true">✓</span> Hỗ trợ suy luận cục bộ ngoại tuyến qua Ollama, vLLM, LM Studio</li>
+            <li class="flex items-center gap-2"><span class="text-brand-400 font-bold" aria-hidden="true">✓</span> Tự động khám phá danh mục model linh hoạt qua lệnh /models</li>
           </ul>
         </div>
 
         <!-- Pillar 3: Fortified Security & Workspace Trust -->
         <div class="relative p-7 sm:p-8 rounded-2xl enterprise-glass-card group">
           <div class="flex items-center justify-between mb-6">
-            <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform" aria-hidden="true">
+            <div class="w-12 h-12 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400 group-hover:scale-105 transition-transform" aria-hidden="true">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
             </div>
-            <span class="px-2.5 py-1 rounded-md bg-amber-500/15 text-amber-300 font-mono text-xs font-semibold">Fail-Closed Safety</span>
+            <span class="px-2.5 py-1 rounded-md bg-surface-card border border-surface-border text-slate-300 font-mono text-xs font-medium">Fail-Closed Safety</span>
           </div>
-          <h3 class="text-xl font-bold text-white mb-3">Bảo Mật Phân Tầng &amp; Workspace Trust</h3>
+          <h3 class="text-xl font-bold text-white mb-3">Kiến Trúc Bảo Mật Phân Tầng &amp; Workspace Trust</h3>
           <p class="text-slate-300 text-sm leading-relaxed mb-4">
             Quyền kiểm soát chặt chẽ với các chế độ Ask / Auto / Read-Only. Xác thực Workspace Trust bằng chữ ký SHA-256 bảo vệ toàn diện các kịch bản shell thực thi.
           </p>
           <ul class="text-xs text-slate-400 space-y-2 font-mono">
-            <li class="flex items-center gap-2"><span class="text-amber-400 font-bold" aria-hidden="true">✓</span> 8 Hook vòng đời fail-closed (PreToolUse, PostToolUse...) bảo vệ hệ thống</li>
-            <li class="flex items-center gap-2"><span class="text-amber-400 font-bold" aria-hidden="true">✓</span> Ngăn chặn hoàn toàn việc rò rỉ credential API ra shell con</li>
-            <li class="flex items-center gap-2"><span class="text-amber-400 font-bold" aria-hidden="true">✓</span> Nhật ký kiểm toán audit log định dạng JSONL minh bạch cục bộ</li>
+            <li class="flex items-center gap-2"><span class="text-brand-400 font-bold" aria-hidden="true">✓</span> 8 Hook vòng đời fail-closed (PreToolUse, PostToolUse...) bảo vệ hệ thống</li>
+            <li class="flex items-center gap-2"><span class="text-brand-400 font-bold" aria-hidden="true">✓</span> Ngăn chặn hoàn toàn việc rò rỉ credential API ra shell con</li>
+            <li class="flex items-center gap-2"><span class="text-brand-400 font-bold" aria-hidden="true">✓</span> Nhật ký kiểm toán audit log định dạng JSONL minh bạch cục bộ</li>
           </ul>
         </div>
 
         <!-- Pillar 4: Autonomous Ecosystem (MCP & Subagents) -->
         <div class="relative p-7 sm:p-8 rounded-2xl enterprise-glass-card group">
           <div class="flex items-center justify-between mb-6">
-            <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 group-hover:scale-105 transition-transform" aria-hidden="true">
+            <div class="w-12 h-12 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400 group-hover:scale-105 transition-transform" aria-hidden="true">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
             </div>
-            <span class="px-2.5 py-1 rounded-md bg-purple-500/15 text-purple-300 font-mono text-xs font-semibold">Extensible Power</span>
+            <span class="px-2.5 py-1 rounded-md bg-surface-card border border-surface-border text-slate-300 font-mono text-xs font-medium">Extensible Power</span>
           </div>
           <h3 class="text-xl font-bold text-white mb-3">Subagents &amp; Model Context Protocol (MCP)</h3>
           <p class="text-slate-300 text-sm leading-relaxed mb-4">
             Khả năng mở rộng không giới hạn: phân quyền tác vụ cho các Subagent chạy nền độc lập, kết nối công cụ ngoài qua chuẩn Model Context Protocol (MCP) và ghép đôi thiết bị qua /pair.
           </p>
           <ul class="text-xs text-slate-400 space-y-2 font-mono">
-            <li class="flex items-center gap-2"><span class="text-purple-400 font-bold" aria-hidden="true">✓</span> Quản lý MCP cấp độ user và project (.vyen/mcp.json) với ưu tiên User Deny</li>
-            <li class="flex items-center gap-2"><span class="text-purple-400 font-bold" aria-hidden="true">✓</span> Điều phối mạng lưới tác vụ Agent Network và workflow tùy biến</li>
-            <li class="flex items-center gap-2"><span class="text-purple-400 font-bold" aria-hidden="true">✓</span> Ghép đôi thiết bị từ xa qua tunnel bảo mật Cloudflare (/pair)</li>
+            <li class="flex items-center gap-2"><span class="text-brand-400 font-bold" aria-hidden="true">✓</span> Quản lý MCP cấp độ user và project (.vyen/mcp.json) với ưu tiên User Deny</li>
+            <li class="flex items-center gap-2"><span class="text-brand-400 font-bold" aria-hidden="true">✓</span> Điều phối mạng lưới tác vụ Agent Network và workflow tùy biến</li>
+            <li class="flex items-center gap-2"><span class="text-brand-400 font-bold" aria-hidden="true">✓</span> Ghép đôi thiết bị từ xa qua tunnel bảo mật Cloudflare (/pair)</li>
           </ul>
         </div>
 
@@ -823,7 +808,7 @@ vyen</code></pre>
         <!-- Setup Wizard Tips -->
         <div class="mt-6 p-4 rounded-xl bg-surface-subtle border border-surface-border text-xs text-slate-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div class="flex items-center gap-2">
-            <span class="text-brand-400 font-bold" aria-hidden="true">💡 Kiến trúc:</span>
+            <svg class="w-4 h-4 text-brand-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span class="text-brand-400 font-bold font-mono">Kiến trúc:</span>
             <span>Lệnh <code class="text-white font-mono bg-surface-card px-1.5 py-0.5 rounded">vyen setup</code> tự động kiểm tra model qua endpoint, mã hóa key quyền 0600 và lưu trữ an toàn.</span>
           </div>
           <a href="https://github.com/tungsten321/Vyen-cli#thi%E1%BA%BFt-l%E1%BA%ADp-nhanh-vyen-setup-ho%E1%BA%B7c-vyen-init" target="_blank" rel="noopener noreferrer" class="text-brand-400 hover:underline shrink-0 font-mono py-1">
@@ -943,7 +928,7 @@ vyen</code></pre>
           1. Bản phát hành &amp; Bản vá
         </button>
         <button id="cl-tab-git" role="tab" aria-selected="false" aria-controls="cl-view-git" class="cl-tab flex-1 py-2 px-3 rounded-lg font-medium transition-all text-slate-400 hover:text-slate-200 active:scale-95 flex items-center justify-center gap-1.5" data-view="git">
-          <span class="w-2 h-2 rounded-full bg-brand-400 animate-pulse" aria-hidden="true"></span>
+          <span class="w-2 h-2 rounded-full bg-brand-400" aria-hidden="true"></span>
           <span>2. Live Git Commits</span>
         </button>
       </div>
@@ -961,7 +946,7 @@ vyen</code></pre>
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <div class="flex items-center gap-3">
                   <span class="text-xl font-bold font-mono text-white">v0.5.1 <span class="text-xs font-normal text-slate-400 font-sans">(Bản vá Git Master · npm: v0.5.0)</span></span>
-                  <span class="px-2.5 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 text-xs font-mono font-bold animate-pulse">
+                  <span class="px-2.5 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 text-xs font-mono font-bold">
                     Bản vá an ninh mới nhất
                   </span>
                 </div>
@@ -971,7 +956,7 @@ vyen</code></pre>
               <div class="space-y-3 text-xs sm:text-sm text-slate-300">
                 <div class="p-3.5 rounded-xl bg-surface-subtle border border-surface-border space-y-1.5">
                   <div class="font-bold text-white flex items-center gap-2">
-                    <span class="text-rose-400">🛡️</span>
+                    <svg class="w-4 h-4 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                     <span>Vá lỗ hổng Policy Bypass &amp; Lệnh đặc quyền su (<code class="text-brand-400 font-mono">ae1c317</code>, <code class="text-brand-400 font-mono">715e7e3</code>):</span>
                   </div>
                   <ul class="list-disc list-inside space-y-1 pl-2 text-slate-300 font-mono text-xs">
@@ -983,7 +968,7 @@ vyen</code></pre>
 
                 <div class="p-3.5 rounded-xl bg-surface-subtle border border-surface-border space-y-1.5">
                   <div class="font-bold text-white flex items-center gap-2">
-                    <span class="text-amber-400">🔑</span>
+                    <svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
                     <span>Chống rò rỉ Credential &amp; Khóa chặt bất biến Read-Only (<code class="text-brand-400 font-mono">715e7e3</code>):</span>
                   </div>
                   <ul class="list-disc list-inside space-y-1 pl-2 text-slate-300 font-mono text-xs">
@@ -996,7 +981,7 @@ vyen</code></pre>
 
                 <div class="p-3.5 rounded-xl bg-surface-subtle border border-surface-border space-y-1.5">
                   <div class="font-bold text-white flex items-center gap-2">
-                    <span class="text-cyan-400">🌐</span>
+                    <svg class="w-4 h-4 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
                     <span>Phòng thủ SSRF toàn diện &amp; Fallback Web Search (<code class="text-brand-400 font-mono">2fef5c4</code>):</span>
                   </div>
                   <ul class="list-disc list-inside space-y-1 pl-2 text-slate-300 font-mono text-xs">
@@ -1081,7 +1066,7 @@ vyen</code></pre>
               </div>
               <span class="text-xs font-mono text-slate-400">2026-10</span>
             </div>
-            <p class="text-sm font-semibold text-slate-300">Đại Tu TUI Siêu Tốc &amp; Kiểm Toán Bảo Mật Toàn Diện</p>
+            <p class="text-sm font-semibold text-slate-300">Tối Ưu Hiệu Năng TUI &amp; Kiểm Toán Bảo Mật Toàn Diện</p>
             <ul class="text-xs sm:text-sm text-slate-400 space-y-1.5 list-disc list-inside leading-relaxed">
               <li>Render TUI tăng tốc ~80 lần mỗi frame; tối giản giao diện với thanh trạng thái tập trung.</li>
               <li>Vá bảo mật: không lộ API key vào môi trường bash, rg, git.</li>
@@ -1099,7 +1084,7 @@ vyen</code></pre>
       
       <div class="flex items-center justify-between pb-3 border-b border-surface-border text-xs font-mono text-slate-400">
         <div class="flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-brand-400 animate-ping" aria-hidden="true"></span>
+          <span class="w-2 h-2 rounded-full bg-brand-400" aria-hidden="true"></span>
           <span>Kho lưu trữ: <strong class="text-white">tungsten321/Vyen-cli:master</strong></span>
         </div>
         <button id="refresh-commits-btn" class="px-2.5 py-1 rounded-lg bg-surface-card hover:bg-white/10 border border-surface-border text-slate-300 hover:text-brand-400 transition-colors flex items-center gap-1 active:scale-95" aria-label="Làm mới danh sách commit">
@@ -1533,7 +1518,7 @@ vyen</code></pre>
                 <div>Mã thoát: <code class="text-rose-400 font-bold">exitCode = 2 (Permission Denied)</code></div>
               </div>
               <div class="p-2.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-300 text-[11px]">
-                Chính sách bảo mật của Vyen chặn đứng toàn bộ lệnh chu hiểm và không bao giờ rò rỉ credential ra môi trường shell con.
+                Chính sách bảo mật của Vyen chặn đứng toàn bộ lệnh nguy hiểm và không bao giờ rò rỉ credential ra môi trường shell con.
               </div>
             </div>
           `
@@ -1541,13 +1526,33 @@ vyen</code></pre>
       };
 
       let currentScenario = 'autofix';
+      let activeTerminalCommand = scenarios.autofix.prompt;
       let typingTimer = null;
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      const statusDot = document.getElementById('terminal-status-dot');
+      const statusTokens = document.getElementById('terminal-status-tokens');
+      const statusDecision = document.getElementById('terminal-status-decision');
+
+      function updateTerminalStatus(decision, tokens, isDenied = false) {
+        if (!statusDot || !statusTokens || !statusDecision) return;
+        statusTokens.textContent = tokens;
+        if (isDenied) {
+          statusDot.className = 'w-1.5 h-1.5 rounded-full bg-rose-500';
+          statusDecision.className = 'text-rose-400 font-bold';
+          statusDecision.textContent = decision;
+        } else {
+          statusDot.className = 'w-1.5 h-1.5 rounded-full bg-brand-400';
+          statusDecision.className = 'text-brand-400 font-bold';
+          statusDecision.textContent = decision;
+        }
+      }
 
       function playScenario(scenarioKey) {
         if (typingTimer) clearTimeout(typingTimer);
         currentScenario = scenarioKey;
         const scen = scenarios[scenarioKey] || scenarios.autofix;
+        activeTerminalCommand = scen.prompt;
         promptElement.textContent = '';
         streamContent.style.opacity = '0';
         streamContent.style.pointerEvents = 'none';
@@ -1571,6 +1576,11 @@ vyen</code></pre>
           streamContent.innerHTML = scen.render;
           streamContent.style.opacity = '1';
           streamContent.style.pointerEvents = 'auto';
+          if (scenarioKey === 'failclosed') {
+            updateTerminalStatus('Denied (Fail-Closed)', '312', true);
+          } else {
+            updateTerminalStatus('Approved', '1,420', false);
+          }
           return;
         }
 
@@ -1585,6 +1595,11 @@ vyen</code></pre>
               streamContent.innerHTML = scen.render;
               streamContent.style.opacity = '1';
               streamContent.style.pointerEvents = 'auto';
+              if (scenarioKey === 'failclosed') {
+                updateTerminalStatus('Denied (Fail-Closed)', '312', true);
+              } else {
+                updateTerminalStatus('Approved', '1,420', false);
+              }
             }, 200);
           }
         }
@@ -1603,12 +1618,11 @@ vyen</code></pre>
         });
       }
 
-      // Copy Prompt Button inside Terminal Mockup
+      // Copy Prompt Button inside Terminal Mockup (copies currently active prompt/command)
       if (copyTerminalPromptBtn) {
         copyTerminalPromptBtn.addEventListener('click', async () => {
-          const scen = scenarios[currentScenario] || scenarios.autofix;
           try {
-            await navigator.clipboard.writeText(scen.prompt);
+            await navigator.clipboard.writeText(activeTerminalCommand);
             if (copyPromptText) copyPromptText.textContent = 'Đã chép!';
             showToast('Đã chép lệnh Terminal vào clipboard');
             setTimeout(() => {
@@ -1708,6 +1722,7 @@ vyen</code></pre>
       cmdPills.forEach(pill => {
         pill.addEventListener('click', () => {
           const cmd = pill.getAttribute('data-cmd');
+          activeTerminalCommand = cmd;
           if (typingTimer) clearTimeout(typingTimer);
           // Deselect active scenario buttons so UI accurately reflects the custom command
           scenarioBtns.forEach(btn => {
@@ -1716,6 +1731,7 @@ vyen</code></pre>
             btn.classList.add('bg-surface-subtle', 'text-slate-400');
           });
           promptElement.textContent = cmd;
+          updateTerminalStatus('Approved', '840', false);
           streamContent.innerHTML = cmdMockResponses[cmd] || `
             <div class="p-3 rounded-lg bg-brand-500/10 border border-brand-500/30 text-emerald-300 text-xs">
               Mô phỏng lệnh: <code class="font-bold text-white">${cmd}</code>... Mở terminal thực tế để chạy!

@@ -928,3 +928,27 @@ test('sanitizeEnvironment strips database and cache connection URIs', async () =
   assert.equal(sanitized.MONGO_URI, undefined, 'MONGO_URI must be stripped');
 });
 
+test('executeWorkflow fails closed when approval step has no confirmStep handler', async t => {
+  const f = await fixture(t);
+  const wf = {
+    name: 'test-approval-fail-closed',
+    description: 'test approval step fails closed without confirmStep',
+    scope: 'workspace',
+    steps: [
+      { id: 'gate', type: 'approval', message: 'Deploy to production?' },
+      { id: 's2', type: 'shell', command: 'echo deployed' },
+    ],
+  };
+
+  const res = await executeWorkflow(wf, '', {
+    cwd: f.cwd,
+    signal: AbortSignal.timeout(10_000),
+    runPrompt: async () => 'noop',
+  });
+
+  assert.equal(res.status, 'aborted');
+  assert.equal(res.steps[0].status, 'skipped');
+  assert.match(res.steps[0].output, /no approval handler/i);
+});
+
+

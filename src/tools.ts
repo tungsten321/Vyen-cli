@@ -131,6 +131,17 @@ export function normalizeToolInput(toolName: string, input: unknown): unknown {
     delete obj.file_path;
     delete obj.directory;
   }
+  if (toolName === 'write_file') {
+    if (obj.content === undefined) {
+      const aliasContent = obj.text ?? obj.file_content ?? obj.fileContent ?? obj.body ?? obj.contents;
+      if (typeof aliasContent === 'string') obj.content = aliasContent;
+    }
+    delete obj.text;
+    delete obj.file_content;
+    delete obj.fileContent;
+    delete obj.body;
+    delete obj.contents;
+  }
   if (toolName === 'read_file') {
     if (obj.offset === undefined) {
       const aliasOffset = obj.start_line ?? obj.startLine ?? obj.line ?? obj.from_line ?? obj.fromLine;

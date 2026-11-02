@@ -86,3 +86,22 @@ test('landing page implements critical anti-FOUC CSS, collision-free toast, modi
   assert.match(html, /function\s+escapeHtml/i, 'missing escapeHtml sanitizer for dynamic Git commit ingestion');
 });
 
+test('landing page synchronizes terminal status bar decision, clipboard command tracking, and fixes security scenario typo', async () => {
+  assert.ok(existsSync(HTML_PATH), `${HTML_PATH} does not exist`);
+  const html = await readFile(HTML_PATH, 'utf8');
+  assert.match(html, /terminal-status-decision/i, 'missing terminal status bar decision element ID');
+  assert.match(html, /activeTerminalCommand/i, 'terminal copy button must track active command instead of static scenario prompt');
+  assert.match(html, /toàn bộ lệnh nguy hiểm/i, 'security scenario must use correct spelling "toàn bộ lệnh nguy hiểm"');
+  assert.doesNotMatch(html, /toàn bộ lệnh chu hiểm/i, 'typo "chu hiểm" must be eliminated');
+});
+
+test('landing page enforces big-tech aesthetic without technical emoji overload and uses pointer coarse media query for touch targets', async () => {
+  assert.ok(existsSync(HTML_PATH), `${HTML_PATH} does not exist`);
+  const html = await readFile(HTML_PATH, 'utf8');
+  assert.match(html, /@media\s*\(\s*pointer:\s*coarse\s*\)/i, 'missing pointer: coarse media query for responsive touch targets');
+  assert.doesNotMatch(html, /button,\s*\.tappable[\s\S]*?min-height:\s*44px/i, 'button tag must not be universally forced to 44px min-height');
+  assert.doesNotMatch(html, /4 Trụ Cột Kỹ Thuật Độc Bản/i, 'hyperbolic marketing copy must be replaced');
+  assert.doesNotMatch(html, /Đại Tu TUI Siêu Tốc/i, 'hyperbolic AI changelog title must be replaced');
+});
+
+

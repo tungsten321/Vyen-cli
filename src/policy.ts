@@ -23,7 +23,7 @@ const COMPOUND_SPLIT_REGEX = /[;\r\n|&]+|\$\(|[<>]+\(|`/g;
 // A command position that starts with a substitution has no static command
 // word; deny/ask rules must fail closed instead of guessing what it expands to.
 const DYNAMIC_COMMAND_PREFIX_REGEX = /(?:^|[;&|\r\n])\s*(?:\$\(|`)/;
-const WRAPPER_PREFIX_REGEX = /^(?:(?:(?:\/usr)?\/bin\/)?(?:sudo|doas|pkexec)(?:\s+(?:-[ugpCDRTrtU]\s+(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z0-9]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+|(?:(?:\/usr)?\/bin\/)?su(?:\s+-(?:-[a-zA-Z0-9-]+|[a-zA-Z0-9]*)?)*\s*(?:\s+[a-zA-Z0-9._-]+)?\s+-c\s+|(?:(?:\/usr)?\/bin\/)?env(?:\s+(?:-[uC]\s+(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z0-9]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?|[a-zA-Z_][a-zA-Z0-9_]*=(?:"[^"]*"|'[^']*'|[^\s]*)))*\s+|(?:[a-zA-Z_][a-zA-Z0-9_]*=(?:"[^"]*"|'[^']*'|[^\s]*)\s+)+|(?:(?:\/usr)?\/bin\/)?(?:bash|sh|dash|zsh|ksh|busybox(?:\s+sh)?)(?:\s+(?:--?[a-zA-Z][a-zA-Z0-9-]*))*\s+|(?:eval|exec|command|builtin)(?:\s+--?[a-zA-Z-]*)*\s+|(?:nohup|setsid)(?:\s+--?[a-zA-Z-]*)*\s+|time(?:\s+(?:-o\s+(?:"[^"]*"|'[^']*'|[^\s]+)|-f\s+(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+|nice(?:\s+(?:-n\s*\d+|-\d+|--adjustment=\d+|-[a-zA-Z]+|--[a-zA-Z-]*))*\s+|stdbuf(?:\s+(?:-[ioe]\s*(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+|timeout(?:\s+(?:-[ks]\s*(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+\d+(?:\.\d+)?[smhd]?\s+|xargs(?:\s+(?:-[0rtx]+|-[adEILnPs]\s*(?:"[^"]*"|'[^']*'|[^\s]+)|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+|(?:!|then|do|else|elif|if|while|until|for|select|case|function)\s+|(?:\d*(?:>>?|<<?|>&|<&)\s*(?:&?\d+|"[^"]*"|'[^']*'|[^\s;&|]+)\s+)+)/i;
+const WRAPPER_PREFIX_REGEX = /^(?:(?:(?:\/usr)?\/bin\/)?(?:sudo|doas|pkexec)(?:\s+(?:-[ugpCDRTrtU]\s+(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z0-9]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+|(?:(?:\/usr)?\/bin\/)?su(?:\s+-(?:-[a-zA-Z0-9-]+|[a-zA-Z0-9]*)?)*\s*(?:\s+[a-zA-Z0-9._-]+)?\s+-c\s+|(?:(?:\/usr)?\/bin\/)?env(?:\s+(?:-[uC]\s+(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z0-9]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?|[a-zA-Z_][a-zA-Z0-9_]*=(?:"[^"]*"|'[^']*'|[^\s]*)))*\s+|(?:[a-zA-Z_][a-zA-Z0-9_]*=(?:"[^"]*"|'[^']*'|[^\s]*)\s+)+|(?:(?:\/usr)?\/bin\/)?(?:bash|sh|dash|zsh|ksh|busybox(?:\s+sh)?)(?:\s+(?:--?[a-zA-Z][a-zA-Z0-9-]*))*\s+|(?:(?:\/usr)?\/bin\/)?(?:eval|exec|command|builtin)(?:\s+--?[a-zA-Z-]*)*\s+|(?:(?:\/usr)?\/bin\/)?(?:nohup|setsid)(?:\s+--?[a-zA-Z-]*)*\s+|(?:(?:\/usr)?\/bin\/)?time(?:\s+(?:-o\s+(?:"[^"]*"|'[^']*'|[^\s]+)|-f\s+(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+|(?:(?:\/usr)?\/bin\/)?nice(?:\s+(?:-n\s*\d+|-\d+|--adjustment=\d+|-[a-zA-Z]+|--[a-zA-Z-]*))*\s+|(?:(?:\/usr)?\/bin\/)?stdbuf(?:\s+(?:-[ioe]\s*(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+|(?:(?:\/usr)?\/bin\/)?timeout(?:\s+(?:-[ks]\s*(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+\d+(?:\.\d+)?[smhd]?\s+|(?:(?:\/usr)?\/bin\/)?xargs(?:\s+(?:-[0rtx]+|-[adEILnPs]\s*(?:"[^"]*"|'[^']*'|[^\s]+)|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+|(?:!|then|do|else|elif|if|while|until|for|select|case|function)\s+|(?:\d*(?:>>?|<<?|>&|<&)\s*(?:&?\d+|"[^"]*"|'[^']*'|[^\s;&|]+)\s+)+)/i;
 
 
 const SHELL_WORD_DELIMITER = /[\s;&|<>()`]/;
@@ -103,16 +103,21 @@ function cleanCommandSegment(
   // Brace and glob expansion both let the shell build the command word from
   // syntax the rule cannot see: `{rm,-rf,/}`, `r{m,}` and `[r]m` all run `rm`.
   // A rule written for `rm` must fail closed instead of reading the literal.
-  if (hasShellGeneratedWord(cleaned)) return { texts: [cleaned], dynamic: true };
   let previous = '';
   while (previous !== cleaned) {
     previous = cleaned;
+    // Brace and glob expansion both let the shell build the command word from
+    // syntax the rule cannot see: `{rm,-rf,/}`, `r{m,}` and `[r]m` all run `rm`.
+    // A rule written for `rm` must fail closed instead of reading the literal.
+    if (hasShellGeneratedWord(cleaned)) return { texts: [cleaned], dynamic: true };
     // Strip subshell groupings e.g. (cmd) or { cmd; }
-    cleaned = cleaned.replace(/^[\s({]+|[\s)}]+$/g, '').trim();
+    cleaned = cleaned.replace(/^[\s(]+|[\s)]+$/g, '').trim();
+    cleaned = cleaned.replace(/^\{\s+|\s*;?\s*\}$/g, '').trim();
     // Strip wrappers e.g. sudo, env, nohup, sh -c, command, eval, redirections
     cleaned = cleaned.replace(WRAPPER_PREFIX_REGEX, '').trim();
   }
   if (!cleaned) return { texts: [], dynamic: false };
+  if (hasShellGeneratedWord(cleaned)) return { texts: [cleaned], dynamic: true };
   const { word, rest, dynamic } = normalizeCommandWord(cleaned);
   if (!word) return { texts: [cleaned], dynamic };
   const text = `${word}${rest}`.trim();
@@ -242,8 +247,14 @@ export function matchToolPattern(
         }
         // `*` spans spaces, so `bash(rm *)` would also cover `rm -rf /`. Argument-driven
         // commands are approved by the exact line, never by a wildcard.
-        if (rawArgPattern.includes('*') && ARGUMENT_DRIVEN_COMMAND_RE.test(argStr)) {
-          return false;
+        if (rawArgPattern.includes('*')) {
+          if (ARGUMENT_DRIVEN_COMMAND_RE.test(argStr)) {
+            return false;
+          }
+          const cleaned = cleanCommandSegment(argStr, 0, platform);
+          if (cleaned.dynamic || cleaned.texts.some(t => ARGUMENT_DRIVEN_COMMAND_RE.test(t))) {
+            return false;
+          }
         }
         return matchSimplePattern(rawArgPattern, argStr);
       }
