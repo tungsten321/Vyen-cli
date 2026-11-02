@@ -23,7 +23,8 @@ const COMPOUND_SPLIT_REGEX = /[;\r\n|&]+|\$\(|[<>]+\(|`/g;
 // A command position that starts with a substitution has no static command
 // word; deny/ask rules must fail closed instead of guessing what it expands to.
 const DYNAMIC_COMMAND_PREFIX_REGEX = /(?:^|[;&|\r\n])\s*(?:\$\(|`)/;
-const WRAPPER_PREFIX_REGEX = /^(?:(?:(?:\/usr)?\/bin\/)?(?:sudo|doas|pkexec)(?:\s+(?:-[ugpCDRTrtU]\s+(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z0-9]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+|(?:(?:\/usr)?\/bin\/)?su(?:\s+-(?:-[a-zA-Z0-9-]+|[a-zA-Z0-9]*)?)*\s*(?:\s+[a-zA-Z0-9._-]+)?\s+-c\s+|(?:(?:\/usr)?\/bin\/)?env(?:\s+(?:-[uC]\s+(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z0-9]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?|[a-zA-Z_][a-zA-Z0-9_]*=(?:"[^"]*"|'[^']*'|[^\s]*)))*\s+|(?:[a-zA-Z_][a-zA-Z0-9_]*=(?:"[^"]*"|'[^']*'|[^\s]*)\s+)+|(?:(?:\/usr)?\/bin\/)?(?:bash|sh)(?:\s+(?:--?[a-zA-Z][a-zA-Z0-9-]*))*\s+|(?:eval|exec|command|builtin)(?:\s+--?[a-zA-Z-]*)*\s+|(?:nohup|setsid)(?:\s+--?[a-zA-Z-]*)*\s+|time(?:\s+(?:-o\s+(?:"[^"]*"|'[^']*'|[^\s]+)|-f\s+(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+|nice(?:\s+(?:-n\s*\d+|-\d+|--adjustment=\d+|-[a-zA-Z]+|--[a-zA-Z-]*))*\s+|stdbuf(?:\s+(?:-[ioe]\s*(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+|timeout(?:\s+(?:-[ks]\s*(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+\d+(?:\.\d+)?[smhd]?\s+|xargs(?:\s+(?:-[0rtx]+|-[adEILnPs]\s*(?:"[^"]*"|'[^']*'|[^\s]+)|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+|(?:!|then|do|else|elif|if|while|until|for|select|case|function)\s+|(?:\d*(?:>>?|<<?|>&|<&)\s*(?:&?\d+|"[^"]*"|'[^']*'|[^\s;&|]+)\s+)+)/i;
+const WRAPPER_PREFIX_REGEX = /^(?:(?:(?:\/usr)?\/bin\/)?(?:sudo|doas|pkexec)(?:\s+(?:-[ugpCDRTrtU]\s+(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z0-9]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+|(?:(?:\/usr)?\/bin\/)?su(?:\s+-(?:-[a-zA-Z0-9-]+|[a-zA-Z0-9]*)?)*\s*(?:\s+[a-zA-Z0-9._-]+)?\s+-c\s+|(?:(?:\/usr)?\/bin\/)?env(?:\s+(?:-[uC]\s+(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z0-9]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?|[a-zA-Z_][a-zA-Z0-9_]*=(?:"[^"]*"|'[^']*'|[^\s]*)))*\s+|(?:[a-zA-Z_][a-zA-Z0-9_]*=(?:"[^"]*"|'[^']*'|[^\s]*)\s+)+|(?:(?:\/usr)?\/bin\/)?(?:bash|sh|dash|zsh|ksh|busybox(?:\s+sh)?)(?:\s+(?:--?[a-zA-Z][a-zA-Z0-9-]*))*\s+|(?:eval|exec|command|builtin)(?:\s+--?[a-zA-Z-]*)*\s+|(?:nohup|setsid)(?:\s+--?[a-zA-Z-]*)*\s+|time(?:\s+(?:-o\s+(?:"[^"]*"|'[^']*'|[^\s]+)|-f\s+(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+|nice(?:\s+(?:-n\s*\d+|-\d+|--adjustment=\d+|-[a-zA-Z]+|--[a-zA-Z-]*))*\s+|stdbuf(?:\s+(?:-[ioe]\s*(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+|timeout(?:\s+(?:-[ks]\s*(?:"[^"]*"|'[^']*'|[^\s]+)|-[a-zA-Z]+|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+\d+(?:\.\d+)?[smhd]?\s+|xargs(?:\s+(?:-[0rtx]+|-[adEILnPs]\s*(?:"[^"]*"|'[^']*'|[^\s]+)|--[a-zA-Z-]*(?:=(?:"[^"]*"|'[^']*'|[^\s]+))?))*\s+|(?:!|then|do|else|elif|if|while|until|for|select|case|function)\s+|(?:\d*(?:>>?|<<?|>&|<&)\s*(?:&?\d+|"[^"]*"|'[^']*'|[^\s;&|]+)\s+)+)/i;
+
 
 const SHELL_WORD_DELIMITER = /[\s;&|<>()`]/;
 
@@ -160,6 +161,23 @@ function normalizePathForMatching(raw: string, cwd = process.cwd(), platform = p
   return resolved;
 }
 
+function extractPatchTargetPaths(patchContent: string): string[] {
+  const paths: string[] = [];
+  const lines = patchContent.split(/\r?\n/);
+  for (const line of lines) {
+    if (
+      line.startsWith('*** Update File: ') ||
+      line.startsWith('*** Add File: ') ||
+      line.startsWith('*** Delete File: ') ||
+      line.startsWith('*** Move to: ')
+    ) {
+      const p = line.slice(line.indexOf(':') + 1).trim();
+      if (p) paths.push(p);
+    }
+  }
+  return paths;
+}
+
 function extractToolArgumentString(tool: string, input: unknown, cwd?: string, platform = process.platform): string {
   if (typeof input === 'string') {
     return (tool === 'bash' || tool === 'web_fetch' || tool === 'web_search')
@@ -169,6 +187,7 @@ function extractToolArgumentString(tool: string, input: unknown, cwd?: string, p
   if (!input || typeof input !== 'object') return '';
   const obj = input as Record<string, unknown>;
   if (typeof obj.command === 'string') return obj.command.trim();
+  if (tool === 'search' && typeof obj.query === 'string') return obj.query.trim();
   if (typeof obj.path === 'string') return normalizePathForMatching(obj.path, cwd, platform);
   if (typeof obj.file_path === 'string') return normalizePathForMatching(obj.file_path, cwd, platform);
   if (typeof obj.url === 'string') return obj.url.trim();
@@ -271,6 +290,27 @@ export function matchToolPattern(
     }
     if (canonicalRequestTool === 'web_search') {
       return matchSimplePattern(rawArgPattern, argStr);
+    }
+    if (canonicalRequestTool === 'apply_patch') {
+      const rawPatch = typeof request.input === 'string'
+        ? request.input
+        : (request.input && typeof request.input === 'object' && typeof (request.input as Record<string, unknown>).patch === 'string')
+          ? (request.input as Record<string, unknown>).patch as string
+          : '';
+      const touchedPaths = extractPatchTargetPaths(rawPatch);
+      if (!touchedPaths.length) return false;
+      const isPathCaseSensitive = platform !== 'win32';
+      const normalizedPattern = normalizePathForMatching(rawArgPattern, options.cwd, platform);
+      if (options.isAllow) {
+        return touchedPaths.every(p => {
+          const norm = normalizePathForMatching(p, options.cwd, platform);
+          return matchSimplePattern(normalizedPattern, norm, isPathCaseSensitive);
+        });
+      }
+      return touchedPaths.some(p => {
+        const norm = normalizePathForMatching(p, options.cwd, platform);
+        return matchSimplePattern(normalizedPattern, norm, isPathCaseSensitive);
+      });
     }
     const isPathCaseSensitive = platform !== 'win32';
     const normalizedPattern = normalizePathForMatching(rawArgPattern, options.cwd, platform);

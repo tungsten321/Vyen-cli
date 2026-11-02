@@ -76,3 +76,13 @@ test('landing page includes multi-scenario terminal playground and package manag
   assert.match(html, /pnpm/i, 'missing pnpm support in install box');
   assert.match(html, /bun/i, 'missing bun support in install box');
 });
+
+test('landing page implements critical anti-FOUC CSS, collision-free toast, modifier shortcut guards, and XSS escaping', async () => {
+  assert.ok(existsSync(HTML_PATH), `${HTML_PATH} does not exist`);
+  const html = await readFile(HTML_PATH, 'utf8');
+  assert.match(html, /html\s*\{\s*background-color:\s*#07090E/i, 'missing critical anti-FOUC background color');
+  assert.match(html, /id=["']shortcut-toast["'][^>]*bottom-6\s+left-/i, 'shortcut toast must be positioned at bottom left to avoid colliding with scroll-to-top button');
+  assert.match(html, /e\.ctrlKey\s*\|\|\s*e\.metaKey\s*\|\|\s*e\.altKey/i, 'missing keyboard shortcut modifier isolation guard');
+  assert.match(html, /function\s+escapeHtml/i, 'missing escapeHtml sanitizer for dynamic Git commit ingestion');
+});
+

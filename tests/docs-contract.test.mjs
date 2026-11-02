@@ -175,3 +175,13 @@ test('docs contract covers project MCP trust and scope', async () => {
   assert.match(roadmap, /R1\.3.*(?:completed|done)/i, 'docs/ROADMAP.md must mark R1.3 completed');
 });
 
+test('SPEC documents that allowed-tools does not override persistent deny rules', async () => {
+  const spec = await readFile('docs/SPEC.md', 'utf8');
+  assert.match(
+    spec,
+    /--allowed-tools.*(?:does not override|never overrides).*deny|--allowed-tools.*overrides ask and allow.*not.*deny/i,
+    'docs/SPEC.md must document that --allowed-tools does not override persistent deny rules',
+  );
+});
+
+

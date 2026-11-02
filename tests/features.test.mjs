@@ -625,6 +625,7 @@ test('workflow shell step sanitizes ambient sensitive environment variables', as
       cwd: f.cwd,
       signal: new AbortController().signal,
       effectiveReadOnly: false,
+      approveShell: async () => true,
     });
 
     assert.equal(res.status, 'completed');
@@ -659,6 +660,7 @@ test('workflow shell step preserves explicit workflow arguments and variables', 
     cwd: f.cwd,
     signal: new AbortController().signal,
     effectiveReadOnly: false,
+    approveShell: async () => true,
   });
 
   assert.equal(res.status, 'completed');
@@ -871,3 +873,58 @@ test('CLI ends the active session before store swaps and suppresses lifecycle fo
   const stepBlock = source.slice(stepStart, source.indexOf('return await stepHarness.run', stepStart));
   assert.match(stepBlock, /stepHarness !== harness[\s\S]*sessionLifecycle = false/);
 });
+
+test('executeWorkflow fails closed when shell step has no policy and no approval handler', async t => {
+  const f = await fixture(t);
+  const wf = {
+    name: 'test-shell-no-approval',
+    description: 'test',
+    scope: 'workspace',
+    steps: [
+      { id: 's1', type: 'shell', command: 'echo hello' },
+    ],
+  };
+
+  const res = await executeWorkflow(wf, '', {
+    cwd: f.cwd,
+    signal: AbortSignal.timeout(10_000),
+    runPrompt: async () => 'noop',
+  });
+
+  assert.equal(res.status, 'failed');
+  assert.match(res.finalOutput, /requires policy or approval handler/i);
+});
+
+test('run_workflow tool wires confirmStep to require approval for approval steps', async () => {
+  const source = await readFile(new URL('../src/cli.ts', import.meta.url), 'utf8');
+  const toolStart = source.indexOf("reg.register('run_workflow'");
+  assert.ok(toolStart > -1, 'run_workflow tool registration must exist');
+  const toolBlock = source.slice(toolStart, source.indexOf('return JSON.stringify(res', toolStart));
+  assert.match(toolBlock, /confirmStep:\s*async/, 'run_workflow tool must wire confirmStep');
+});
+
+test('run_workflow tool forwards subagent and network handlers to workflow runner', async () => {
+  const source = await readFile(new URL('../src/cli.ts', import.meta.url), 'utf8');
+  const toolStart = source.indexOf("reg.register('run_workflow'");
+  assert.ok(toolStart > -1, 'run_workflow tool registration must exist');
+  const toolBlock = source.slice(toolStart, source.indexOf('return JSON.stringify(res', toolStart));
+  assert.match(toolBlock, /runSubagents:\s*(?:subagents\s*\?\s*)?async/, 'run_workflow tool must wire runSubagents');
+  assert.match(toolBlock, /runNetwork:\s*(?:subagents\s*\?\s*)?async/, 'run_workflow tool must wire runNetwork');
+});
+
+test('sanitizeEnvironment strips database and cache connection URIs', async () => {
+  const { sanitizeEnvironment } = await import('../dist/hooks.js');
+  const sanitized = sanitizeEnvironment({
+    SAFE_PORT: '3000',
+    DATABASE_URL: 'postgres://admin:secret123@localhost:5432/mydb',
+    POSTGRES_URL: 'postgresql://user:pass@localhost:5432/db',
+    REDIS_URL: 'redis://:mypassword@localhost:6379/0',
+    MONGO_URI: 'mongodb://root:mongopass@localhost:27017/admin',
+  });
+  assert.equal(sanitized.SAFE_PORT, '3000');
+  assert.equal(sanitized.DATABASE_URL, undefined, 'DATABASE_URL must be stripped');
+  assert.equal(sanitized.POSTGRES_URL, undefined, 'POSTGRES_URL must be stripped');
+  assert.equal(sanitized.REDIS_URL, undefined, 'REDIS_URL must be stripped');
+  assert.equal(sanitized.MONGO_URI, undefined, 'MONGO_URI must be stripped');
+});
+

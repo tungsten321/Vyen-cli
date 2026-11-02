@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.5.1 (Latest Patches & Security Hardening)
+
+- **Vá bảo mật Policy Enforcement & Workflow Bypass (`ae1c317`, `715e7e3`)**:
+  - `src/workflow.ts`: Sửa lỗi bước workflow con không kế thừa `policy` và `hookBus`, ngăn chặn hoàn toàn việc bypass các luật deny do người dùng cấu hình.
+  - `src/policy.ts`: Thắt chặt biểu thức chính quy (regex) nhận diện lệnh bọc `su` (`su -c ...`), đảm bảo lệnh đặc quyền không vượt qua bộ lọc permissions.
+  - `src/pair.ts`: Lọc và chuẩn hóa câu lệnh gửi từ xa qua tunnel Cloudflare, ngăn chặn khai thác tham số và leo thang đặc quyền.
+- **Bảo vệ rò rỉ Credential & Bất biến Read-Only (`715e7e3`)**:
+  - `src/memory.ts`: Tự động loại bỏ (scrub) các API key, token bí mật và credential nhạy cảm trước khi ghi nhớ vào tệp `memories.json`.
+  - `src/process.ts`: Lọc sạch biến môi trường `VYEN_API_KEY` khỏi tiến trình shell con được tạo mới (`spawnProcessGroup`), triệt tiêu nguy cơ tool đọc được khóa API của agent.
+  - `src/files.ts`: Khóa chặt bất biến chỉ đọc (read-only invariant), chặn các tool chỉnh sửa ghi đè tệp ngoài ranh giới cho phép.
+  - `src/cli.ts`: Đảm bảo quy tắc phân quyền được gắn chặt và giữ nguyên khi thay thế phiên (`/new`, `/resume`).
+- **Phòng thủ SSRF & Cải tiến Web Search Tools (`2fef5c4`)**:
+  - `src/web.ts`: Phòng vệ toàn diện tấn công SSRF (Server-Side Request Forgery) bằng kỹ thuật DNS pinning, chặn truy cập dải IP nội bộ/riêng tư (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `127.0.0.0/8`) và endpoint metadata đám mây (`169.254.169.254`).
+  - Tự động fallback linh hoạt sang các công cụ tìm kiếm dự phòng khi DuckDuckGo bị nghẽn hoặc quá tải.
+  - `src/help.ts`: Chuẩn hóa hướng dẫn và cờ CLI cho các công cụ web.
+- **Học tập thực nghiệm (`fe862b1`, `caad5c4`)**:
+  - Bổ sung kinh nghiệm kiểm toán an ninh vào `AGENT_LEARNINGS.md` ngăn ngừa lỗi tái diễn.
+
 ## 0.5.0
 
 - Chuẩn hóa giao diện Headless Contract (R1.4):

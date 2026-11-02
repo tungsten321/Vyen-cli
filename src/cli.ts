@@ -1326,6 +1326,14 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
                 effectiveReadOnly: reg.effectiveReadOnly,
                 approveShell: (command, stepSig) =>
                   reg.approve({ tool: 'bash', input: { command }, signal: stepSig }),
+                confirmStep: async (msg, stepSig) => {
+                  if (mode === 'auto') return true;
+                  return await reg.approve({
+                    tool: 'run_workflow',
+                    input: { message: msg },
+                    signal: stepSig,
+                  });
+                },
                 runPrompt: async (stepPrompt, step, stepSig) => {
                   const wfSessionsRoot = join(runtime.dataDir, 'workflows', store.session.id);
                   const childStore = await SessionStore.open(wfSessionsRoot, runtime);

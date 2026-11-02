@@ -525,26 +525,35 @@ test('webSearch standalone policy check rejects deny decision', async () => {
 });
 
 test('ToolRegistry allows web_search when user approves ask policy decision', async () => {
-  let promptCount = 0;
-  const registry = new ToolRegistry(
-    process.cwd(),
-    async () => {
-      promptCount++;
-      return true; // user approves
-    },
-  );
-  registry.policy = () => 'ask';
-  const result = await registry.execute(
-    {
-      callId: 'c1',
-      toolName: 'web_search',
-      input: { query: 'test query' },
-    },
-    new AbortController().signal,
-  );
-  assert.equal(result.denied, undefined);
-  assert.equal(promptCount, 1);
-  assert.equal(result.decision, 'ask_approved');
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response('<a class="result-link" href="https://example.com">Example</a><td class="result-snippet">Snippet</td>', {
+    status: 200,
+    headers: { 'content-type': 'text/html' },
+  });
+  try {
+    let promptCount = 0;
+    const registry = new ToolRegistry(
+      process.cwd(),
+      async () => {
+        promptCount++;
+        return true; // user approves
+      },
+    );
+    registry.policy = () => 'ask';
+    const result = await registry.execute(
+      {
+        callId: 'c1',
+        toolName: 'web_search',
+        input: { query: 'test query' },
+      },
+      new AbortController().signal,
+    );
+    assert.equal(result.denied, undefined);
+    assert.equal(promptCount, 1);
+    assert.equal(result.decision, 'ask_approved');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('convertHtmlToMarkdown handles unclosed li tags cleanly', () => {

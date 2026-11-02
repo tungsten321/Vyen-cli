@@ -991,5 +991,32 @@ test('evaluateWorkspaceTrust requires trust for project MCP servers and records 
   }
 });
 
+test('PreToolUse hook aborted by signal fails closed with denied: true', async () => {
+  const bus = new HookBus({
+    cwd: process.cwd(),
+    isTrusted: true,
+    hooks: [
+      {
+        event: 'PreToolUse',
+        command: 'node -e "process.exit(0)"',
+      },
+    ],
+  });
+
+  const controller = new AbortController();
+  // Dispatch with active signal, but abort immediately as the command starts
+  const dispatchPromise = bus.dispatch(
+    'PreToolUse',
+    { tool: 'bash', input: { command: 'echo 1' } },
+    controller.signal,
+  );
+  controller.abort();
+  const results = await dispatchPromise;
+  assert.equal(results.length, 1);
+  assert.equal(results[0].denied, true, 'Aborted PreToolUse hook must strictly fail closed with denied: true');
+  assert.equal(results[0].error, 'Hook execution aborted');
+});
+
+
 
 

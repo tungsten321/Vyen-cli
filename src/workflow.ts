@@ -634,6 +634,23 @@ export async function executeWorkflow(
         const rawCmd = interp(step.command ?? step.prompt ?? '', 'shell');
         if (!rawCmd.trim()) throw new Error(`Shell step "${step.id}" has no command.`);
         const cmd = sanitizeBashCommand(rawCmd);
+        if (hooks.hookBus) {
+          const preHooks = await hooks.hookBus.dispatch('PreToolUse', {
+            tool: 'bash',
+            input: { command: cmd },
+            workflow: workflow.name,
+            stepId: step.id,
+          });
+          const failedPreHook = preHooks.find(h => h.denied || h.timedOut || Boolean(h.error));
+          if (failedPreHook) {
+            const reason = failedPreHook.timedOut
+              ? 'PreToolUse hook timed out.'
+              : failedPreHook.error
+                ? failedPreHook.error
+                : (failedPreHook.stderr?.trim() || 'Tool execution denied by PreToolUse hook.');
+            throw new Error(`Permission denied by hook for shell command: ${reason}`);
+          }
+        }
         if (hooks.policy) {
           const decision = hooks.policy({ tool: 'bash', input: { command: cmd } });
           if (decision === 'deny') {
@@ -653,23 +670,8 @@ export async function executeWorkflow(
           if (!allowed) {
             throw new Error(`Permission denied by the user for shell command: ${cmd}`);
           }
-        }
-        if (hooks.hookBus) {
-          const preHooks = await hooks.hookBus.dispatch('PreToolUse', {
-            tool: 'bash',
-            input: { command: cmd },
-            workflow: workflow.name,
-            stepId: step.id,
-          });
-          const failedPreHook = preHooks.find(h => h.denied || h.timedOut || Boolean(h.error));
-          if (failedPreHook) {
-            const reason = failedPreHook.timedOut
-              ? 'PreToolUse hook timed out.'
-              : failedPreHook.error
-                ? failedPreHook.error
-                : (failedPreHook.stderr?.trim() || 'Tool execution denied by PreToolUse hook.');
-            throw new Error(`Permission denied by hook for shell command: ${reason}`);
-          }
+        } else {
+          throw new Error(`Permission denied: shell command requires policy or approval handler: ${cmd}`);
         }
         hooks.onProgress?.(`  $ ${cmd}\n`);
         const baseEnv = sanitizeEnvironment(process.env);

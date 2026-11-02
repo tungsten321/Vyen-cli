@@ -322,7 +322,7 @@ const PRESERVED_ENV_KEYS = new Set([
 export function sanitizeEnvironment(baseEnv: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
   const protectedBase = childEnv(baseEnv);
   const clean: NodeJS.ProcessEnv = {};
-  const sensitivePattern = /KEY|TOKEN|SECRET|AUTH|PASS|CREDENTIAL|PRIVATE/i;
+  const sensitivePattern = /KEY|TOKEN|SECRET|AUTH|PASS|CREDENTIAL|PRIVATE|DATABASE_URL|POSTGRES_URL|REDIS_URL|MONGO_URI/i;
 
   for (const [key, value] of Object.entries(protectedBase)) {
     if (!key) continue;
@@ -330,7 +330,12 @@ export function sanitizeEnvironment(baseEnv: NodeJS.ProcessEnv = process.env): N
       clean[key] = value;
       continue;
     }
-    if (sensitivePattern.test(key) || key === 'VYEN_API_KEY') {
+    if (
+      sensitivePattern.test(key) ||
+      key === 'VYEN_API_KEY' ||
+      /^(?:DATABASE|POSTGRES|REDIS|MONGO|MYSQL)_URL$/i.test(key) ||
+      /^(?:DATABASE|POSTGRES|REDIS|MONGO|MYSQL)_URI$/i.test(key)
+    ) {
       continue;
     }
     clean[key] = value;
@@ -531,9 +536,9 @@ export class HookBus {
       child.on('close', code => {
         clearTimeout(timer);
         if (signal) signal.removeEventListener('abort', onAbort);
-        const exitCode = timedOut ? 124 : (code ?? (aborted ? 130 : 1));
+        const exitCode = timedOut ? 124 : (aborted ? 130 : (code ?? 1));
         const isPreToolUse = event === 'PreToolUse';
-        const denied = exitCode === 2 || (isPreToolUse && (exitCode !== 0 || Boolean(timedOut)));
+        const denied = exitCode === 2 || (isPreToolUse && (exitCode !== 0 || Boolean(timedOut) || Boolean(aborted)));
         const injectedContext =
           exitCode === 0 && stdout.trim().length > 0 ? stdout.trim() : undefined;
         let error: string | undefined;

@@ -628,3 +628,96 @@ test('persistent project deny takes strict precedence over CLI allowed tools', (
   );
 });
 
+test('apply_patch deny rules match against touched file paths inside the patch', () => {
+  const ctx = {
+    projectRules: {
+      deny: ['apply_patch(.env)', 'apply_patch(secret/*)'],
+    },
+  };
+
+  const patchEnv = [
+    '*** Begin Patch',
+    '*** Update File: .env',
+    '@@ -1,1 +1,1 @@',
+    '-OLD=1',
+    '+OLD=2',
+  ].join('\n');
+
+  assert.equal(
+    evaluateToolPolicy({ tool: 'apply_patch', input: { patch: patchEnv } }, ctx),
+    'deny',
+    'Patch touching .env directly must be denied',
+  );
+
+  const multiPatch = [
+    '*** Begin Patch',
+    '*** Update File: src/main.ts',
+    '@@ -1,1 +1,1 @@',
+    '-a',
+    '+b',
+    '*** Add File: secret/keys.txt',
+    '+new-key',
+  ].join('\n');
+
+  assert.equal(
+    evaluateToolPolicy({ tool: 'apply_patch', input: { patch: multiPatch } }, ctx),
+    'deny',
+    'Patch adding secret/keys.txt must be denied',
+  );
+
+  const safePatch = [
+    '*** Begin Patch',
+    '*** Update File: src/main.ts',
+    '@@ -1,1 +1,1 @@',
+    '-a',
+    '+b',
+  ].join('\n');
+
+  assert.equal(
+    evaluateToolPolicy({ tool: 'apply_patch', input: { patch: safePatch } }, ctx),
+    'default',
+    'Safe patch not matching deny rules falls through to default',
+  );
+});
+
+test('search policy matching extracts query argument rather than default path', () => {
+  const ctx = {
+    projectRules: {
+      deny: ['search(*forbidden_query*)'],
+      ask: ['search(*sensitive*)'],
+    },
+  };
+
+  // search schema has { query: string, path: '.' }
+  assert.equal(
+    evaluateToolPolicy({ tool: 'search', input: { query: 'forbidden_query', path: '.' } }, ctx),
+    'deny',
+    'search with forbidden query must be denied even if path is .',
+  );
+
+  assert.equal(
+    evaluateToolPolicy({ tool: 'search', input: { query: 'sensitive_credentials' } }, ctx),
+    'ask',
+    'search with sensitive query must trigger ask',
+  );
+
+  assert.equal(
+    evaluateToolPolicy({ tool: 'search', input: { query: 'public_code', path: '.' } }, ctx),
+    'default',
+  );
+});
+
+test('bash deny rules strip dash, zsh, ksh, and busybox wrappers', () => {
+  const ctx = {
+    projectRules: {
+      deny: ['bash(rm *)'],
+    },
+  };
+
+  assert.equal(evaluateToolPolicy({ tool: 'bash', input: { command: 'dash -c "rm -rf /"' } }, ctx), 'deny');
+  assert.equal(evaluateToolPolicy({ tool: 'bash', input: { command: 'zsh -c "rm -rf /"' } }, ctx), 'deny');
+  assert.equal(evaluateToolPolicy({ tool: 'bash', input: { command: 'ksh -c "rm -rf /"' } }, ctx), 'deny');
+  assert.equal(evaluateToolPolicy({ tool: 'bash', input: { command: 'busybox sh -c "rm -rf /"' } }, ctx), 'deny');
+});
+
+

@@ -20,6 +20,10 @@ const DEFAULT_PROTECTED_SECRETS = new Set<string>([
   'AWS_SECRET_ACCESS_KEY',
   'GITHUB_TOKEN',
   'GH_TOKEN',
+  'DATABASE_URL',
+  'POSTGRES_URL',
+  'REDIS_URL',
+  'MONGO_URI',
 ]);
 
 export function protectSecretEnv(...names: Array<string | undefined>): void {

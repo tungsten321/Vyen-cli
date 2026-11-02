@@ -7,7 +7,7 @@ Loaded by `loadProjectInstructions` in `src/context.ts`. Append empirical lesson
 
 ## 2. Shell Security: Segment-Aware Matching
 - Split on operators (`;`, `&&`, `||`, `|`, newline, `$()`, `<()`, `>()`, backticks); strip subshells, quotes, wrappers (`sudo`, `env`, `sh/bash -c`, `eval`, `exec`); deny if ANY segment matches.
-- **Seen (2026-10-25):** stripping only outer quotes allowed `"rm" -rf /`, `r\m -rf /`, `/bin/rm -rf /` to bypass `deny: ["bash(rm *)"]`.
+- **Seen:** stripping only outer quotes allowed `"rm" -rf /`, `r\m -rf /` to bypass `deny: ["bash(rm *)"]`.
 - **Guard:** `tests/policy.test.mjs` › "bash deny and ask rules cannot be bypassed by quoting or escaping the command word".
 
 ## 3. Trust Coverage
@@ -15,11 +15,10 @@ Loaded by `loadProjectInstructions` in `src/context.ts`. Append empirical lesson
 
 ## 4. Fail-Closed Architecture
 - `isTrusted` defaults `false`, hook timeouts default `denied: true`, corrupt config throws.
-- **HookBus Spawn (2026-10-30):** wrap `spawn()` in `try...catch` so synchronous spawn errors resolve fail-closed (`denied: true`).
+- **HookBus Spawn:** wrap `spawn()` in `try...catch` so synchronous spawn errors resolve fail-closed (`denied: true`).
 
 ## 5. Lifecycle Synchronization
-- Key lifecycle to `SessionStore`, not transient `Harness`.
-- **Guard:** `tests/hooks.test.mjs` › "Harness emits SessionStart once on the first turn of a resumed session and SessionEnd at most once".
+- Key lifecycle to `SessionStore`, not transient `Harness` (`tests/hooks.test.mjs`).
 
 ## 6. Testing Rigor
 - Test tools run without prompts and adversarial vectors; at least one test spawns real hook process.
@@ -39,13 +38,13 @@ Loaded by `loadProjectInstructions` in `src/context.ts`. Append empirical lesson
 - Slash commands that write/delete must use throwing store methods (`tests/files.test.mjs`, `tests/session.test.mjs`).
 
 ## 11. Multi-Branch Regex Tokenizers
-- Regex alternation branches `(A)|(B)|(C)` must have identical capturing group counts to avoid destructuring shift (`tests/tui.test.mjs`).
+- Alternation branches `(A)|(B)|(C)` must have identical capture counts to avoid destructuring shift (`tests/tui.test.mjs`).
 
 ## 12. Wire Schemas
 - Wire schemas must reuse canonical types; every event family requires a stream-level test (`tests/headless.test.mjs`).
 
 ## 13. Audit Logger Singletons & Flushing
-- Mutate options (`addSecretKey`) instead of recreating singletons. Flush audit queue in `endSession()` and `stop()` (`tests/audit-log.test.mjs`).
+- Mutate options (`addSecretKey`) instead of recreating singletons; flush queue in `endSession()` and `stop()` (`tests/audit-log.test.mjs`).
 
 ## 14. Custom `lookup` Honors Node `all` Contract
 - Node ≥20 `lookup(host, { all: true }, cb)` expects `{ address, family }[]`. Custom lookup must branch on `options.all` (`tests/web.test.mjs`).
@@ -57,4 +56,15 @@ Loaded by `loadProjectInstructions` in `src/context.ts`. Append empirical lesson
 - Match paired HTML nodes by DOM proximity; never assume 1-to-1 index alignment across separate query matches (`tests/web.test.mjs`).
 
 ## 17. Workflow Shell Step Approval & Wrapper Matching
-- Shell steps must treat policy `'default'` as requiring `approveShell`, failing closed if absent. `su` wrapper requires dedicated `-c` matching, differing from positional wrappers (`tests/features.test.mjs`, `tests/policy.test.mjs`).
+- Shell steps treat policy `'default'` as requiring `approveShell`, failing closed if absent. `su` wrapper requires dedicated `-c` matching (`tests/features.test.mjs`, `tests/policy.test.mjs`).
+
+## 18. Patch Tool Target Path Extraction & Multi-File Matching
+- `apply_patch` policy matching must parse touched file headers and test each path. Deny/ask matches if ANY matches; allow matches if ALL match (`tests/policy.test.mjs`).
+
+## 19. Hook Abort Fail-Closed Priority Over Process Exit Code
+- In `HookBus.executeCommand()`, aborted state must precede child exit code `0` (`aborted ? 130 : (code ?? 1)`) so `PreToolUse` strictly resolves `denied: true` (`tests/hooks.test.mjs`).
+
+## 20. Workflow Tool Registration & Connection URI Scrubbing
+- `run_workflow` tool registration must wire `confirmStep` to guard approval gates. `sanitizeEnvironment` strips database/cache URIs (`DATABASE_URL`, `POSTGRES_URL`, `REDIS_URL`, `MONGO_URI`) (`tests/features.test.mjs`).
+
+
