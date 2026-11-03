@@ -36,6 +36,25 @@ const SHELL_WORD_DELIMITER = /[\s;&|<>()`]/;
  * time (see `EXACT_ONLY` in approval.ts for the same rule).
  */
 const ARGUMENT_DRIVEN_COMMAND_RE = /^(?:(?:\/usr)?\/bin\/)?(?:rm|rmdir|mv|cp|ln|chmod|chown|chgrp|dd|truncate|shred|mkfs|curl|wget|scp|rsync|nc|ncat|kill|pkill|killall|docker|podman|kubectl|ssh)(?:\.exe)?(?:\s|$)/i;
+const PACKAGE_MANAGERS_SET = new Set(['npm', 'pnpm', 'yarn', 'bun', 'pip', 'pip3', 'uv', 'poetry', 'cargo', 'go', 'gem', 'composer', 'apt', 'apt-get', 'pkg', 'brew', 'dnf', 'pacman']);
+const INSTALL_SUBCOMMANDS_SET = new Set(['install', 'i', 'add', 'ci', 'update', 'upgrade', 'up', 'get', 'remove', 'rm', 'uninstall', 'un', 'sync']);
+
+function isPackageInstallCommand(text: string): boolean {
+  const tokens = text.trim().split(/\s+/);
+  if (!tokens.length) return false;
+  const baseBinary = (tokens[0].split(/[\\/]/).pop() ?? tokens[0]).replace(/\.exe$/i, '').toLowerCase();
+  if (!PACKAGE_MANAGERS_SET.has(baseBinary)) return false;
+  for (let i = 1; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (t.startsWith('-')) continue;
+    if (INSTALL_SUBCOMMANDS_SET.has(t.toLowerCase())) return true;
+  }
+  return false;
+}
+
+function isArgumentDrivenCommand(text: string): boolean {
+  return ARGUMENT_DRIVEN_COMMAND_RE.test(text) || isPackageInstallCommand(text);
+}
 
 /**
  * Reads the command word of one shell segment the way bash would: quotes and
@@ -113,8 +132,17 @@ function cleanCommandSegment(
     // Strip subshell groupings e.g. (cmd) or { cmd; }
     cleaned = cleaned.replace(/^[\s(]+|[\s)]+$/g, '').trim();
     cleaned = cleaned.replace(/^\{\s+|\s*;?\s*\}$/g, '').trim();
-    // Strip wrappers e.g. sudo, env, nohup, sh -c, command, eval, redirections
-    cleaned = cleaned.replace(WRAPPER_PREFIX_REGEX, '').trim();
+    // Strip wrappers e.g. sudo, env, nohup, sh -c, command, eval, redirections.
+    // Unquote the leading command token so quoted/escaped wrappers ("sudo", \sudo, 'env') match.
+    const { word, rest, dynamic } = normalizeCommandWord(cleaned);
+    if (dynamic) return { texts: [cleaned], dynamic: true };
+    const unquotedCandidate = word ? `${word}${rest}`.trim() : cleaned;
+    const stripped = unquotedCandidate.replace(WRAPPER_PREFIX_REGEX, '').trim();
+    if (stripped !== unquotedCandidate) {
+      cleaned = stripped;
+    } else {
+      cleaned = cleaned.replace(WRAPPER_PREFIX_REGEX, '').trim();
+    }
   }
   if (!cleaned) return { texts: [], dynamic: false };
   if (hasShellGeneratedWord(cleaned)) return { texts: [cleaned], dynamic: true };
@@ -248,11 +276,11 @@ export function matchToolPattern(
         // `*` spans spaces, so `bash(rm *)` would also cover `rm -rf /`. Argument-driven
         // commands are approved by the exact line, never by a wildcard.
         if (rawArgPattern.includes('*')) {
-          if (ARGUMENT_DRIVEN_COMMAND_RE.test(argStr)) {
+          if (isArgumentDrivenCommand(argStr)) {
             return false;
           }
           const cleaned = cleanCommandSegment(argStr, 0, platform);
-          if (cleaned.dynamic || cleaned.texts.some(t => ARGUMENT_DRIVEN_COMMAND_RE.test(t))) {
+          if (cleaned.dynamic || cleaned.texts.some(t => isArgumentDrivenCommand(t))) {
             return false;
           }
         }
@@ -289,12 +317,14 @@ export function matchToolPattern(
     if (canonicalRequestTool === 'web_fetch') {
       if (rawArgPattern.startsWith('domain:')) {
         const domainPattern = rawArgPattern.slice(7).trim().replace(/\.$/, '');
+        const candidateUrl = /^https?:\/\//i.test(argStr.trim()) ? argStr.trim() : `https://${argStr.trim()}`;
         try {
           // A trailing dot is the same DNS name; strip it so a rule cannot be bypassed.
-          const host = new URL(argStr).hostname.replace(/\.$/, '');
+          const host = new URL(candidateUrl).hostname.replace(/\.$/, '');
           return matchSimplePattern(domainPattern, host);
         } catch {
-          return false;
+          // Fail-closed for deny/ask rules if URL parsing fails completely
+          return options.isAllow ? false : true;
         }
       }
       return matchSimplePattern(rawArgPattern, argStr);

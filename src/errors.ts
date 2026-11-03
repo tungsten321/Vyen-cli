@@ -1,3 +1,5 @@
+import { isSecretEnv } from './process.js';
+
 export interface RedactOptions {
   secretKeys?: string[];
   redactPatterns?: boolean;
@@ -12,6 +14,7 @@ export const COMMON_SECRET_PATTERNS: RegExp[] = [
   /glpat-[a-zA-Z0-9_-]{20,}/g,
   /\bA[SK]IA[0-9A-Z]{16}\b/g,
   /Bearer\s+[a-zA-Z0-9_.-]{20,}/gi,
+  /:\/\/([^:/@\s]*):([^/@\s]+)@/g,
 ];
 
 /**
@@ -32,6 +35,8 @@ export function redactSecrets(text: string, options: RedactOptions = {}): string
       pattern.lastIndex = 0;
       if (pattern.source.startsWith('Bearer\\s+')) {
         result = result.replace(pattern, 'Bearer [REDACTED]');
+      } else if (pattern.source.startsWith(':\\/\\/')) {
+        result = result.replace(pattern, '://$1:[REDACTED]@');
       } else {
         result = result.replace(pattern, '[REDACTED]');
       }
@@ -128,7 +133,10 @@ export function safeError(error: unknown, apiKey?: string): string {
       }
     }
   }
-  const secretKeys = apiKey ? [apiKey] : [];
+  const envSecrets = Object.entries(process.env)
+    .filter(([k, v]) => v && typeof v === 'string' && v.length >= 4 && isSecretEnv(k))
+    .map(([, v]) => v as string);
+  const secretKeys = [apiKey, ...envSecrets].filter(Boolean) as string[];
   message = redactSecrets(message, { secretKeys });
   return message.slice(0, 2000);
 }

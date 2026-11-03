@@ -68,3 +68,38 @@ test('safeError never prints [object Object] for a thrown provider payload', () 
   cyclic.self = cyclic;
   assert.equal(safeError(cyclic), 'Unknown provider error.');
 });
+
+test('safeError redacts URI passwords and protected environment secrets', () => {
+  assert.equal(
+    safeError(new Error('connection failed to postgres://admin:supersecretpassword@db.example.com:5432/mydb')),
+    'connection failed to postgres://admin:[REDACTED]@db.example.com:5432/mydb',
+  );
+  assert.equal(
+    safeError(new Error('failed connecting to redis://:mypassword@localhost:6379')),
+    'failed connecting to redis://:[REDACTED]@localhost:6379',
+  );
+  assert.equal(
+    safeError(new Error('request failed: https://token:secret123@api.service.com/v1')),
+    'request failed: https://token:[REDACTED]@api.service.com/v1',
+  );
+  assert.equal(
+    safeError(new Error('fetching http://localhost:5173/@vite/client failed')),
+    'fetching http://localhost:5173/@vite/client failed',
+  );
+  assert.equal(
+    safeError(new Error('registry request to http://registry:4873/@scope/pkg failed')),
+    'registry request to http://registry:4873/@scope/pkg failed',
+  );
+
+  const prevEnv = process.env.GITHUB_TOKEN;
+  try {
+    process.env.GITHUB_TOKEN = 'gh_test_secret_environment_token_999';
+    assert.equal(
+      safeError(new Error('error with token gh_test_secret_environment_token_999 occurred')),
+      'error with token [REDACTED] occurred',
+    );
+  } finally {
+    if (prevEnv !== undefined) process.env.GITHUB_TOKEN = prevEnv;
+    else delete process.env.GITHUB_TOKEN;
+  }
+});

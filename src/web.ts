@@ -88,11 +88,9 @@ export function isPrivateIp(ip: string): boolean {
   const clean = normalizeIp(ip);
   if (!net.isIP(clean)) return false;
 
-  const lower = clean;
-
   // IPv4-mapped IPv6 (::ffff:127.0.0.1, ::ffff:7f00:1, 0:0:0:0:0:ffff:...)
-  if (lower.startsWith('::ffff:') || lower.startsWith('0:0:0:0:0:ffff:')) {
-    const colonParts = lower.split(':');
+  if (clean.startsWith('::ffff:') || clean.startsWith('0:0:0:0:0:ffff:')) {
+    const colonParts = clean.split(':');
     const last = colonParts[colonParts.length - 1];
     if (net.isIPv4(last)) {
       return isPrivateIp(last);
@@ -147,7 +145,7 @@ export function isPrivateIp(ip: string): boolean {
   }
 
   // IPv6
-  const normalized = lower;
+  const normalized = clean;
   // ::1 (Loopback)
   if (normalized === '::1' || normalized === '0:0:0:0:0:0:0:1') return true;
   // :: (Unspecified)

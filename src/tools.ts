@@ -216,6 +216,7 @@ export function normalizeToolInput(toolName: string, input: unknown): unknown {
     delete obj.patch_text;
     delete obj.patchContent;
     delete obj.patch_content;
+    delete obj.content;
   }
   if (toolName === 'web_fetch') {
     if (obj.url === undefined) {

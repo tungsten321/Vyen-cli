@@ -247,6 +247,27 @@ test('tool aliases are normalized in policy matching', () => {
     }),
     'deny',
   );
+  assert.equal(
+    evaluateToolPolicy({ tool: 'web_fetch', input: 'evil.internal/api' }, {
+      projectRules: { deny: ['web_fetch(domain:*.internal)'] },
+    }),
+    'deny',
+    'web_fetch without protocol must match domain deny rule',
+  );
+  assert.equal(
+    evaluateToolPolicy({ tool: 'web_fetch', input: { url: 'evil.internal/secret' } }, {
+      projectRules: { deny: ['web_fetch(domain:*.internal)'] },
+    }),
+    'deny',
+    'web_fetch object with url without protocol must match domain deny rule',
+  );
+  assert.equal(
+    evaluateToolPolicy({ tool: 'web_fetch', input: { url: 'sub.blocked.com:8080/path' } }, {
+      projectRules: { deny: ['web_fetch(domain:*.blocked.com)'] },
+    }),
+    'deny',
+    'web_fetch with port without protocol must match domain deny rule',
+  );
 });
 
 test('bare bash allow rules reject chained or compound commands', () => {
@@ -479,6 +500,17 @@ test('a wildcard allow rule never auto-approves an argument-driven command', () 
     ['bash(cp *)', 'cp -r . /tmp/x'],
     ['bash(chmod *)', 'chmod -R 777 .'],
     ['bash(kubectl *)', 'kubectl delete ns prod'],
+    ['bash(npm *)', 'npm install lodash'],
+    ['bash(npm *)', 'npm i -D typescript'],
+    ['bash(npm *)', 'npm add express'],
+    ['bash(npm *)', 'npm -g install evil'],
+    ['bash(npm *)', 'npm --prefix ./sub install evil'],
+    ['bash(pip *)', 'pip --no-cache-dir install evil'],
+    ['bash(pnpm *)', 'pnpm add axios'],
+    ['bash(yarn *)', 'yarn add react'],
+    ['bash(bun *)', 'bun add hono'],
+    ['bash(pip *)', 'pip install requests'],
+    ['bash(cargo *)', 'cargo install ripgrep'],
   ]) {
     assert.equal(evaluateToolPolicy({ tool: 'bash', input: { command } }, { cliAllowed: [pattern] }), 'default', `${pattern} on ${command}`);
   }
@@ -513,6 +545,12 @@ test('bash deny and ask rules cannot be bypassed by quoting or escaping the comm
     '/bin/rm -rf /',
     'command rm -rf /',
     'sudo "rm" -rf /',
+    '"sudo" rm -rf /',
+    "'sudo' rm -rf /",
+    '\\sudo rm -rf /',
+    '"env" rm -rf /',
+    '\\env rm -rf /',
+    '"bash" -c "rm -rf /"',
     'doas "rm" -rf /',
     'pkexec "rm" -rf /',
     'su -c "rm -rf /"',

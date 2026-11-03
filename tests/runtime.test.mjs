@@ -803,4 +803,17 @@ test('normalizeToolInput maps standard snake_case arguments for edit_file and ba
     normalizeToolInput('write_file', { path: 'd.ts', contents: 'content d' }),
     { path: 'd.ts', content: 'content d' }
   );
+
+  assert.deepEqual(
+    normalizeToolInput('apply_patch', { content: '*** patch a ***' }),
+    { patch: '*** patch a ***' }
+  );
+  assert.deepEqual(
+    normalizeToolInput('apply_patch', { diff: '*** patch b ***' }),
+    { patch: '*** patch b ***' }
+  );
+  assert.deepEqual(
+    normalizeToolInput('apply_patch', { patch_content: '*** patch c ***' }),
+    { patch: '*** patch c ***' }
+  );
 });
