@@ -3,6 +3,21 @@ import { mkdtemp, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { mcpConfigSchema } from '../dist/mcp.js';
+
+export const call = (toolName, input = {}) => ({ toolName, input, toolCallId: 'fixture' });
+export const signal = () => new AbortController().signal;
+export const stdio = (extra = {}, fixtureArgs = []) => mcpConfigSchema.parse({
+  servers: {
+    local: {
+      transport: 'stdio',
+      command: process.execPath,
+      args: [fileURLToPath(new URL('./fixtures/mcp-server.mjs', import.meta.url)), '--stdio', ...fixtureArgs],
+      ...extra,
+    },
+  },
+});
 
 export async function fixture(t) {
   const root = await mkdtemp(join(tmpdir(), 'vyen-test-'));

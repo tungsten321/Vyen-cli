@@ -1,23 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fileURLToPath } from 'node:url';
-import { McpManager, mcpConfigSchema } from '../dist/mcp.js';
+import { McpManager } from '../dist/mcp.js';
 import { ToolRegistry } from '../dist/tools.js';
-import { fixture } from './helpers.mjs';
-
-const call = (toolName, input = {}) => ({ toolName, input, toolCallId: 'fixture' });
-const signal = () => new AbortController().signal;
-
-const stdio = extra => mcpConfigSchema.parse({
-  servers: {
-    local: {
-      transport: 'stdio',
-      command: process.execPath,
-      args: [fileURLToPath(new URL('./fixtures/mcp-server.mjs', import.meta.url)), '--stdio'],
-      ...extra,
-    },
-  },
-});
+import { fixture, call, signal, stdio } from './helpers.mjs';
 
 test('list_mcp_prompts returns available prompts from connected server', async t => {
   const f = await fixture(t);
@@ -46,7 +31,7 @@ test('get_mcp_prompt executes prompt on connected server and returns messages', 
     signal(),
   );
   const parsed = JSON.parse(result.text);
-  assert.ok(parsed.messages);
+  assert.equal(parsed.messages.length, 1);
   assert.equal(parsed.messages[0].role, 'user');
   assert.match(parsed.messages[0].content.text, /Please review:\s*fix bug/);
 });

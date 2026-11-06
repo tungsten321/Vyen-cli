@@ -1,24 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fileURLToPath } from 'node:url';
-import { McpManager, mcpConfigSchema, mcpToolName } from '../dist/mcp.js';
+import { McpManager, mcpToolName } from '../dist/mcp.js';
 import { ToolRegistry } from '../dist/tools.js';
-import { fixture } from './helpers.mjs';
+import { fixture, call, signal, stdio as baseStdio } from './helpers.mjs';
 
-const call = (toolName, input = {}) => ({ toolName, input, toolCallId: 'fixture' });
-const signal = () => new AbortController().signal;
-
-const stdio = extra => mcpConfigSchema.parse({
-  servers: {
-    local: {
-      transport: 'stdio',
-      command: process.execPath,
-      args: [fileURLToPath(new URL('./fixtures/mcp-server.mjs', import.meta.url)), '--stdio', '--sampling'],
-      readOnlyTools: ['sample', 'elicit'],
-      ...extra,
-    },
-  },
-});
+const stdio = extra => baseStdio({ readOnlyTools: ['sample', 'elicit'], ...extra }, ['--sampling']);
 
 test('sampling request enforces 2048 token limit and timeout guard', async t => {
   const f = await fixture(t);
@@ -62,7 +48,7 @@ test('headless elicitation fails closed with declined response', async t => {
   );
 
   const parsed = JSON.parse(res.text);
-  assert.equal(parsed.action, 'decline', 'Headless elicitation must decline by default');
+  assert.deepEqual(parsed, { action: 'decline' }, 'Headless elicitation must decline by default and nothing else');
 });
 
 test('sampling request rejects on timeout when handler hangs', async t => {

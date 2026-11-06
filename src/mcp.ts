@@ -3,13 +3,17 @@ import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve, delimiter, isAbsolute } from 'node:path';
 import { createHash } from 'node:crypto';
+import { spawn } from 'node:child_process';
 import { z } from 'zod';
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { configDir, atomicJson } from './config.js';
-import { limitText } from './files.js';
+import { limitText, isWithinRoot } from './files.js';
 import { isSecretEnv } from './process.js';
 import { VERSION } from './version.js';
+import { resolveSafeAddresses } from './web.js';
+import http from 'node:http';
+import https from 'node:https';
 import type { ToolRegistry } from './tools.js';
 
 export const DEFAULT_MCP_MAX_BUFFER_SIZE = 32 * 1024 * 1024; // 32 MiB (supports multi-MB tools/list payloads like REA)
@@ -23,6 +27,13 @@ function parseEnvPlaceholder(val: string): { name: string; fallback?: string } |
   const m = /^\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-(.*))?\}$/.exec(val.trim());
   if (!m) return undefined;
   return { name: m[1], ...(m[2] !== undefined ? { fallback: m[2] } : {}) };
+}
+
+/** Parses an explicit-boolean env var. Only 1/true/yes (case-insensitive) enable;
+ *  0/false/no/empty/unset and any other value leave it disabled (fail closed). */
+export function parseEnvBoolean(val: string | undefined): boolean {
+  if (!val) return false;
+  return ['1', 'true', 'yes'].includes(val.trim().toLowerCase());
 }
 
 function normalizeServerRaw(raw: unknown): unknown {
@@ -162,6 +173,7 @@ const rawMcpServerUnion = z.discriminatedUnion('transport', [
     bearerEnv: envName.optional(),
     headers: z.record(z.string(), z.string()).default({}),
     envHeaders: z.record(z.string(), envName).default({}),
+    allowLoopback: z.boolean().default(false),
   }).strict(),
 ]);
 
@@ -403,7 +415,7 @@ export function resolveMcpCommand(command: string, env: Record<string, string | 
   }
 
   const pathVar = env.PATH ?? env.Path ?? process.env.PATH ?? process.env.Path ?? '';
-  const dirs = [cwd, ...pathVar.split(delimiter).map(d => d.trim()).filter(Boolean)];
+  const dirs = pathVar.split(delimiter).map(d => d.trim()).filter(Boolean);
   for (const dir of dirs) {
     for (const ext of exts) {
       const candidate = join(dir, command + ext);
@@ -649,7 +661,7 @@ export function sanitizeAndCompactToolSchema(
  * Codex MCP configurations (`npx rea-agents setup --client codex`, `playwright`, `ghidra-mcp`, etc.).
  */
 export function parseCodexMcpServers(tomlText: string): Record<string, McpServerConfig> {
-  const rawServers: Record<string, Record<string, unknown>> = {};
+  const rawServers: Record<string, Record<string, unknown>> = Object.create(null);
   let currentServer: string | undefined;
   let currentSubtable: 'env' | 'http_headers' | 'env_http_headers' | undefined;
 
@@ -697,9 +709,15 @@ export function parseCodexMcpServers(tomlText: string): Record<string, McpServer
       const header = line.slice(1, -1).trim();
       const m = /^mcp_servers\.(?:"([^"]+)"|'([^']+)'|([A-Za-z0-9_-]+))(?:\.(env|http_headers|env_http_headers))?$/.exec(header);
       if (m) {
-        currentServer = m[1] ?? m[2] ?? m[3];
+        const serverName = m[1] ?? m[2] ?? m[3];
+        if (serverName === '__proto__' || serverName === 'constructor' || serverName === 'prototype') {
+          currentServer = undefined;
+          currentSubtable = undefined;
+          continue;
+        }
+        currentServer = serverName;
         currentSubtable = m[4] as 'env' | 'http_headers' | 'env_http_headers' | undefined;
-        rawServers[currentServer] ??= {};
+        rawServers[currentServer] ??= Object.create(null);
       } else {
         currentServer = undefined;
         currentSubtable = undefined;
@@ -710,10 +728,11 @@ export function parseCodexMcpServers(tomlText: string): Record<string, McpServer
     const eqIdx = line.indexOf('=');
     if (eqIdx === -1) continue;
     const key = line.slice(0, eqIdx).trim().replace(/^["']|["']$/g, '');
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
     const val = parseTomlValue(line.slice(eqIdx + 1));
     const entry = rawServers[currentServer];
     if (currentSubtable) {
-      const sub = (entry[currentSubtable] as Record<string, string> | undefined) ?? {};
+      const sub = (entry[currentSubtable] as Record<string, string> | undefined) ?? Object.create(null);
       sub[key] = String(val);
       entry[currentSubtable] = sub;
     } else {
@@ -723,6 +742,7 @@ export function parseCodexMcpServers(tomlText: string): Record<string, McpServer
 
   const parsed: Record<string, McpServerConfig> = {};
   for (const [name, raw] of Object.entries(rawServers)) {
+    if (name === '__proto__' || name === 'constructor' || name === 'prototype') continue;
     const res = mcpServerSchema.safeParse(raw);
     if (res.success) {
       parsed[name] = res.data;
@@ -795,6 +815,75 @@ async function loadMcpSdk() {
 }
 type McpSdk = Awaited<ReturnType<typeof loadMcpSdk>>;
 
+async function pinnedMcpFetch(input: any, init: any, allowLoopback: boolean, maxBytes: number): Promise<Response> {
+  const rawUrl = typeof input === 'string' ? input : input?.url ?? String(input);
+  const url = new URL(rawUrl);
+  const safeAddresses = await resolveSafeAddresses(url.hostname, { allowLoopback });
+  const isHttps = url.protocol === 'https:';
+  const client = isHttps ? https : http;
+  const method = (init?.method ?? input?.method ?? 'GET').toUpperCase();
+  const body = init?.body ?? input?.body;
+  const bodyBuf: Buffer | undefined = body == null ? undefined
+    : Buffer.isBuffer(body) ? body
+    : body instanceof Uint8Array ? Buffer.from(body.buffer, body.byteOffset, body.byteLength)
+    : typeof body === 'string' ? Buffer.from(body)
+    : undefined;
+  const headers: Record<string, string> = {};
+  const srcHeaders = init?.headers ?? input?.headers;
+  if (srcHeaders) {
+    if (typeof srcHeaders.forEach === 'function') srcHeaders.forEach((v: string, k: string) => { headers[k] = v; });
+    else Object.assign(headers, srcHeaders);
+  }
+  if (bodyBuf && !Object.keys(headers).some(h => h.toLowerCase() === 'content-length')) headers['content-length'] = String(bodyBuf.length);
+  const lookup = (_hostname: string, lookupOptions: any, cb: any) => {
+    const family = lookupOptions?.family === 4 || lookupOptions?.family === 6 ? lookupOptions.family : 0;
+    const addresses = safeAddresses.filter((e: any) => family === 0 || e.family === family).map((e: any) => ({ address: e.address, family: e.family }));
+    if (!addresses.length) { cb(Object.assign(new Error('No safe address'), { code: 'ENOTFOUND' }), [], 0); return; }
+    if (lookupOptions?.all) cb(null, addresses);
+    else cb(null, addresses[0].address, addresses[0].family);
+  };
+  return new Promise<Response>((resolvePromise, reject) => {
+    const req = client.request({
+      protocol: url.protocol,
+      hostname: url.hostname,
+      port: url.port || (isHttps ? 443 : 80),
+      path: `${url.pathname}${url.search}`,
+      method,
+      agent: false,
+      headers,
+      lookup,
+      signal: init?.signal,
+    }, (res) => {
+      const chunks: Buffer[] = [];
+      let bytesCollected = 0;
+      res.on('data', (c) => {
+        const buf = Buffer.isBuffer(c) ? c : Buffer.from(c);
+        bytesCollected += buf.length;
+        if (bytesCollected > maxBytes) {
+          res.destroy();
+          reject(new Error(`MCP response exceeded maximum size limit of ${maxBytes} bytes (maxBufferSize)`));
+          return;
+        }
+        chunks.push(buf);
+      });
+      res.on('end', () => {
+        const status = res.statusCode ?? 200;
+        const respHeaders = new Headers();
+        for (const [k, v] of Object.entries(res.headers)) {
+          if (v === undefined) continue;
+          if (Array.isArray(v)) v.forEach(x => respHeaders.append(k, x));
+          else respHeaders.set(k, v);
+        }
+        resolvePromise(new Response(Buffer.concat(chunks), { status, headers: respHeaders }));
+      });
+      res.on('error', reject);
+    });
+    req.on('error', reject);
+    if (bodyBuf) req.write(bodyBuf);
+    req.end();
+  });
+}
+
 export class McpManager {
   private connections: Connection[] = [];
   private closing = false;
@@ -802,6 +891,8 @@ export class McpManager {
   readonly tools: { server: string; name: string; originalName: string; readOnly: boolean }[] = [];
   readonly warnings: string[] = [];
   readonly statuses: McpServerStatus[] = [];
+  /** Redacted, bounded record of swallowed SDK/transport errors (observable for debugging; consumed by the diagnostics test). */
+  readonly diagnostics: string[] = [];
 
   constructor(readonly config: McpConfig, readonly cwd: string) {}
 
@@ -871,7 +962,13 @@ export class McpManager {
     return new Error(limitText(message, 2000));
   }
 
-  /** Starts one server and lists its tools. The connection is tracked as soon as it exists. */
+  /** Records an otherwise-swallowed error for later inspection, redacted and bounded. */
+  private remember(error: unknown): void {
+    this.diagnostics.push(this.error(error).message);
+    if (this.diagnostics.length > 32) this.diagnostics.splice(0, this.diagnostics.length - 32);
+  }
+
+  /** Tracks the connection as soon as it exists so shutdown can always reach it. */
   private async openServer(sdk: McpSdk, server: string, config: McpServerConfig, signal?: AbortSignal) {
     let connection: Connection | undefined;
     try {
@@ -910,6 +1007,9 @@ export class McpManager {
           env[target] = value;
         }
         const targetCwd = config.cwd ? resolve(this.cwd, config.cwd) : this.cwd;
+        if (config.cwd && !isWithinRoot(this.cwd, targetCwd)) {
+          throw new Error(`MCP ${server}: server cwd "${config.cwd}" escapes the workspace root.`);
+        }
         const resolvedCommand = resolveMcpCommand(config.command, env, targetCwd);
         transport = new sdk.StdioClientTransport({
           command: resolvedCommand,
@@ -950,17 +1050,29 @@ export class McpManager {
           if (!token) throw new Error(`MCP ${server}: missing environment variable ${config.bearerEnv}`);
           headers.Authorization = `Bearer ${token}`;
         }
+
+        const targetUrl = new URL(config.url);
+        const allowLoopback = config.allowLoopback || parseEnvBoolean(process.env.VYEN_ALLOW_MCP_LOOPBACK);
+        // SSRF + DNS pinning (same pattern as web.ts): validate once up front, then pin the
+        // validated addresses into every fetch so a rebinding second lookup cannot win.
+        await resolveSafeAddresses(targetUrl.hostname, { allowLoopback });
+
         transport = new sdk.StreamableHTTPClientTransport(new URL(config.url), {
           requestInit: { headers, redirect: 'error' },
-          fetch: (input, init) =>
-            fetch(input, {
-              ...init,
-              signal: AbortSignal.any([
-                ...(init?.signal ? [init.signal] : []),
-                AbortSignal.timeout(this.closing ? Math.min(2000, config.timeoutMs) : config.timeoutMs),
-                ...(signal ? [signal] : []),
-              ]),
-            }),
+          fetch: (input, init) => {
+            const composed = new AbortController();
+            const signals: AbortSignal[] = [];
+            if (init?.signal) signals.push(init.signal);
+            if (signal) signals.push(signal);
+            signals.push(AbortSignal.timeout(this.closing ? Math.min(2000, config.timeoutMs) : config.timeoutMs));
+            const forward = () => { if (!composed.signal.aborted) composed.abort(); };
+            for (const sig of signals) {
+              if (sig.aborted) { forward(); break; }
+              sig.addEventListener('abort', forward, { once: true });
+            }
+            return pinnedMcpFetch(input as any, { ...init, signal: composed.signal }, allowLoopback, config.maxBufferSize)
+              .finally(() => { for (const sig of signals) sig.removeEventListener('abort', forward); });
+          },
         });
       }
 
@@ -1008,8 +1120,8 @@ export class McpManager {
         }
         return { action: 'decline' as const };
       });
-      // Never send raw SDK/server errors to stderr; CLI controls presentation.
-      client.onerror = () => {};
+      // Never send raw SDK/server errors to stderr; CLI controls presentation. Record them redacted instead.
+      client.onerror = error => { this.remember(error); };
       connection = { server, timeoutMs: config.timeoutMs, client, transport, kind: config.transport, remove: [] };
       this.connections.push(connection);
       await client.connect(transport, { signal, timeout: config.timeoutMs });
@@ -1048,11 +1160,11 @@ export class McpManager {
     this.statuses.length = 0;
     this.specs = [];
     this.tools.length = 0;
+    this.diagnostics.length = 0;
     try {
       const entries = Object.entries(this.config.servers);
       const enabled = entries.filter(([, config]) => !config.disabled);
       const sdk = enabled.length ? await loadMcpSdk() : undefined;
-      // Start every server concurrently: total startup is the slowest server, not the sum of all.
       const opened = await Promise.allSettled(entries.map(([server, config]) =>
         config.disabled || !sdk ? Promise.resolve(undefined) : this.openServer(sdk, server, config, signal)));
       let fatal: unknown;
@@ -1308,7 +1420,7 @@ export class McpManager {
   private async closeConnection(connection: Connection) {
     for (const unregister of connection.remove) unregister();
     if (connection.kind === 'http') {
-      await (connection.transport as { terminateSession?: () => Promise<void> }).terminateSession?.().catch(() => {});
+      await (connection.transport as { terminateSession?: () => Promise<void> }).terminateSession?.().catch(error => { this.remember(error); });
     }
     const proc = (connection.transport as unknown as { _process?: import('node:child_process').ChildProcess })._process;
     const exitPromise =
@@ -1325,14 +1437,28 @@ export class McpManager {
     }
     await Promise.race([
       (async () => {
-        await connection.client.close().catch(() => {});
-        await connection.transport.close().catch(() => {});
+        await connection.client.close().catch(error => { this.remember(error); });
+        await connection.transport.close().catch(error => { this.remember(error); });
       })(),
       new Promise<void>(resolve => setTimeout(resolve, 250)),
     ]);
     if (proc && proc.exitCode === null && proc.signalCode === null) {
       try {
-        proc.kill('SIGKILL');
+        if (process.platform === 'win32' && proc.pid) {
+          const taskkill = spawn('taskkill', ['/pid', String(proc.pid), '/T', '/F'], {
+            stdio: 'ignore',
+            windowsHide: true,
+          });
+          taskkill.on('error', () => {
+            try { proc.kill('SIGKILL'); } catch {}
+          });
+        } else if (proc.pid) {
+          try {
+            process.kill(-proc.pid, 'SIGKILL');
+          } catch {
+            proc.kill('SIGKILL');
+          }
+        }
       } catch {
         // ignore
       }

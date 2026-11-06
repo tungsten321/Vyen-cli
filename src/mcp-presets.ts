@@ -14,8 +14,6 @@ export const OFFICIAL_PRESETS: Record<string, PresetDefinition> = {
       command: 'npx',
       args: ['-y', '@modelcontextprotocol/server-memory'],
       readOnlyTools: [],
-      timeoutMs: 30_000,
-      disableSampling: false,
     },
   },
   sequentialthinking: {
@@ -25,8 +23,6 @@ export const OFFICIAL_PRESETS: Record<string, PresetDefinition> = {
       command: 'npx',
       args: ['-y', '@modelcontextprotocol/server-sequential-thinking'],
       readOnlyTools: ['sequentialthinking'],
-      timeoutMs: 30_000,
-      disableSampling: false,
     },
   },
   fetch: {
@@ -36,8 +32,6 @@ export const OFFICIAL_PRESETS: Record<string, PresetDefinition> = {
       command: 'npx',
       args: ['-y', '@modelcontextprotocol/server-fetch'],
       readOnlyTools: ['fetch'],
-      timeoutMs: 30_000,
-      disableSampling: false,
     },
   },
   git: {
@@ -47,8 +41,6 @@ export const OFFICIAL_PRESETS: Record<string, PresetDefinition> = {
       command: 'uvx',
       args: ['mcp-server-git'],
       readOnlyTools: ['git_status', 'git_diff', 'git_log'],
-      timeoutMs: 30_000,
-      disableSampling: false,
     },
   },
   filesystem: {
@@ -58,8 +50,6 @@ export const OFFICIAL_PRESETS: Record<string, PresetDefinition> = {
       command: 'npx',
       args: ['-y', '@modelcontextprotocol/server-filesystem', '.'],
       readOnlyTools: ['read_file', 'list_directory'],
-      timeoutMs: 30_000,
-      disableSampling: false,
     },
   },
   time: {
@@ -69,8 +59,6 @@ export const OFFICIAL_PRESETS: Record<string, PresetDefinition> = {
       command: 'uvx',
       args: ['mcp-server-time'],
       readOnlyTools: ['get_current_time'],
-      timeoutMs: 30_000,
-      disableSampling: false,
     },
   },
   everything: {
@@ -80,8 +68,6 @@ export const OFFICIAL_PRESETS: Record<string, PresetDefinition> = {
       command: 'npx',
       args: ['-y', '@modelcontextprotocol/server-everything'],
       readOnlyTools: ['echo'],
-      timeoutMs: 30_000,
-      disableSampling: false,
     },
   },
 };

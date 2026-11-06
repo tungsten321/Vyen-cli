@@ -9,14 +9,12 @@ tools and persistence. No ZCode runtime source is copied or loaded.
   only from user config, environment and flags. MCP supports global user configuration
   in `mcp.json` and project MCP in `.vyen/mcp.json` subject to workspace trust. Priority: flags > VYEN_* environment > user config > defaults.
   Credentials are resolved at runtime through keyEnv and are never saved by init.
-  If baseUrl is absent, Provider uses the built-in default
-  `https://api.yuristore.xyz/v1`; this is a third-party destination and README
-  discloses it. The CLI prints a one-time warning naming that destination before
-  the first model request; an explicit baseUrl suppresses it. The setup wizard
-  prints the same warning before its first `/models` probe when a first setup
-  still accepts the default gateway. Known gateway endpoints (`api.yuristore.xyz`,
-  `localhost:8000`, `127.0.0.1:8000`) without a path component are automatically
-  normalized to append `/v1`.
+  There is no default gateway: baseUrl is required. If baseUrl is absent,
+  `resolveRuntime` fails closed with a clear error directing the user to
+  `vyen setup` or `vyen init --model MODEL --base-url URL`; no prompt or key
+  ever leaves the machine.
+  Known local gateway endpoints (`localhost:8000`, `127.0.0.1:8000`) without a
+  path component are automatically normalized to append `/v1`.
 - Harness owns ModelMessage history, token accounting, tool result pairing and
   compaction. A streamed response must complete before any tool executes. Reads
   can run in consecutive batches of up to six; mutations execute in declaration order.
@@ -61,9 +59,10 @@ tools and persistence. No ZCode runtime source is copied or loaded.
 - Local audit log records tool decisions (tool name, decision: allow/deny/ask_approved/ask_denied, durationMs, tokens, errorClass) and remote pair lifecycle events (session_start, session_stop, remote_approve, remote_deny with origin) into daily JSONL files under `$XDG_DATA_HOME/vyen/audit/` (`audit-YYYY-MM-DD.jsonl`) with 10MB chunk rotation (`audit-YYYY-MM-DD.<index>.jsonl`). Audit writes execute asynchronously off the critical path. File contents, user prompts, and configured API keys are never written to audit records; logging is disabled completely when `VYEN_AUDIT=off`.
 - Help/init/doctor/sessions/upgrade perform no model request. No account login,
   plugin marketplace, telemetry, browser, native addons or bundled runtime.
-  `vyen doctor --json` keeps `baseUrl` as the configured value or
-  `"provider default"` and adds `effectiveBaseUrl` and `defaultGateway` so a
-  headless consumer can audit the destination without parsing stderr.
+  `vyen doctor --json` keeps `baseUrl` as the configured value or `null`
+  and adds `effectiveBaseUrl` (same configured URL, normalized, or `null`)
+  so a headless consumer can audit the destination without parsing stderr.
+  When baseUrl is not configured, doctor warns and does not probe any endpoint.
   Updates are opt-in: `vyen upgrade` detects npm/pnpm/yarn/bun and runs that
   manager's global install. The interactive start reads a 24-hour registry cache
   and only notifies by default; `update: auto` installs before the TUI starts,
@@ -85,10 +84,16 @@ tools and persistence. No ZCode runtime source is copied or loaded.
   elicitation, and bounded sampling (capped at 2048 tokens with timeout guard)
   are available; tools and resources are supported; OAuth and legacy SSE are not.
   Official reference servers installable via `vyen mcp add --preset <name>`.
+  MCP HTTP transport disables loopback/private addresses by default; it can be
+  enabled per server with `allowLoopback: true` in mcp.json or globally with
+  `VYEN_ALLOW_MCP_LOOPBACK=1` (only `1`/`true`/`yes` enable; `0`/`false`/`no` and
+  empty values fail closed). This override applies to MCP HTTP only, never to
+  `web_fetch`. HTTP response bodies are bounded by `maxBufferSize` (default
+  32 MiB, min 64 KiB, max 128 MiB) and rejected once exceeded.
 - Subagents own separate transcripts under subagents/PARENT_UUID. Research uses
   at most two concurrent children globally per manager; editing tasks are serial
   mutation barriers. Children share the parent's approval callback and run budget,
-  have a 30k local budget, no MCP and no child delegation. Parent cancellation
+  no MCP and no child delegation. Parent cancellation
   drains children; child permission denial stops the parent. Budgets are checked
   between requests and concurrent in-flight requests can exceed the threshold.
 - Pairing is opt-in (`vyen pair`, `--pair` or `/pair`). The HTTP server binds

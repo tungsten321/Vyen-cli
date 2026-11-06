@@ -10,6 +10,8 @@ import {
   GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { setTimeout } from 'node:timers/promises';
+import { writeFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
 
 export function mockMcpServer(includeSampling = process.argv.includes('--sampling')) {
   const server = new Server({ name: 'vyen-test-server', version: '1.0.0' }, { capabilities: { tools: {}, resources: {}, prompts: {} } });
@@ -116,6 +118,17 @@ export function mockReaScaleServer(count = 207) {
 if (process.argv.includes('--stdio') || process.argv.includes('--rea-scale')) {
   process.stdin.on('end', () => process.exit(0));
   process.stdin.on('close', () => process.exit(0));
+}
+const flagValue = flag => {
+  const i = process.argv.indexOf(flag);
+  return i === -1 ? undefined : process.argv[i + 1];
+};
+const pidFile = flagValue('--write-pid');
+if (pidFile) writeFileSync(pidFile, String(process.pid));
+const childPidFile = flagValue('--spawn-child');
+if (childPidFile) {
+  const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' });
+  writeFileSync(childPidFile, String(child.pid));
 }
 if (process.argv.includes('--stdio')) await mockMcpServer().connect(new StdioServerTransport());
 if (process.argv.includes('--rea-scale')) await mockReaScaleServer().connect(new StdioServerTransport());

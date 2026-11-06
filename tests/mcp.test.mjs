@@ -17,15 +17,13 @@ import {
   projectMcpConfigPath,
   saveProjectMcpConfig,
   sanitizeAndCompactToolSchema,
+  resolveMcpCommand,
+  parseCodexMcpServers,
+  parseEnvBoolean,
 } from '../dist/mcp.js';
 import { ToolRegistry } from '../dist/tools.js';
 import { mockMcpServer } from './fixtures/mcp-server.mjs';
-import { fixture, cli, provider, sse } from './helpers.mjs';
-
-const stdio = extra => mcpConfigSchema.parse({ servers: { local: { transport: 'stdio', command: process.execPath,
-  args: [fileURLToPath(new URL('./fixtures/mcp-server.mjs', import.meta.url)), '--stdio'], ...extra } } });
-const call = (toolName, input = {}) => ({ toolName, input, toolCallId: 'fixture' });
-const signal = () => new AbortController().signal;
+import { fixture, cli, provider, sse, call, signal, stdio } from './helpers.mjs';
 
 test('MCP stdio discovers pages, validates arguments, preserves approvals and unregisters on close', async t => {
   const f = await fixture(t);
@@ -81,15 +79,50 @@ test('MCP Streamable HTTP uses bearer env credentials and executes real protocol
   });
   await new Promise(resolve => http.listen(0, '127.0.0.1', resolve));
   t.after(async () => { await Promise.all(clients.map(c => c.close())); http.closeAllConnections(); await new Promise(resolve => http.close(resolve)); });
-  process.env.VYEN_MCP_TEST_TOKEN = 'vyen-mcp-test-token';
-  t.after(() => { delete process.env.VYEN_MCP_TEST_TOKEN; });
+  process.env.VYEN_MCP_TEST_HELPER = 'vyen-mcp-test-token';
+  t.after(() => { delete process.env.VYEN_MCP_TEST_HELPER; });
   const config = mcpConfigSchema.parse({ servers: { remote: { transport: 'http', url: `http://127.0.0.1:${http.address().port}/mcp`,
-    bearerEnv: 'VYEN_MCP_TEST_TOKEN', readOnlyTools: ['echo'] } } });
+    allowLoopback: true,
+    bearerEnv: 'VYEN_MCP_TEST_HELPER', readOnlyTools: ['echo'] } } });
   const registry = new ToolRegistry(f.cwd, async () => false);
   const manager = new McpManager(config, f.cwd); t.after(() => manager.close());
   await manager.connect(registry);
   assert.equal((await registry.execute(call(mcpToolName('remote', 'echo'), { text: 'remote works' }), signal())).text, 'remote works');
   await manager.close();
+});
+
+test('MCP HTTP client rejects a response larger than maxBufferSize instead of buffering it unbounded', async t => {
+  const f = await fixture(t);
+  const http = createServer(async (request, response) => {
+    let body = '';
+    for await (const chunk of request) body += chunk;
+    let req;
+    try { req = JSON.parse(body); } catch { response.writeHead(400).end(); return; }
+    const { id, method } = req;
+    if (id === undefined) { response.writeHead(202).end(); return; } // notifications
+    response.writeHead(200, { 'content-type': 'application/json' });
+    if (method === 'initialize') {
+      response.end(JSON.stringify({ jsonrpc: '2.0', id, result: {
+        protocolVersion: req.params?.protocolVersion ?? '2025-06-18',
+        capabilities: { tools: {} },
+        serverInfo: { name: 'oversized-test', version: '1.0' },
+      } }));
+    } else if (method === 'tools/list') {
+      response.end(JSON.stringify({ jsonrpc: '2.0', id, result: { tools: [
+        { name: 'evil', description: 'A'.repeat(200_000), inputSchema: { type: 'object', properties: {} } },
+      ] } }));
+    } else {
+      response.end(JSON.stringify({ jsonrpc: '2.0', id, result: {} }));
+    }
+  });
+  await new Promise(resolve => http.listen(0, '127.0.0.1', resolve));
+  t.after(() => { http.closeAllConnections(); return new Promise(resolve => http.close(resolve)); });
+  const config = mcpConfigSchema.parse({ servers: { remote: { transport: 'http', url: `http://127.0.0.1:${http.address().port}/mcp`,
+    allowLoopback: true, maxBufferSize: 65_536, timeoutMs: 8000 } } });
+  const registry = new ToolRegistry(f.cwd, async () => true);
+  const manager = new McpManager(config, f.cwd); t.after(() => manager.close());
+  await assert.rejects(manager.connect(registry), /exceeded.*maxBufferSize|maximum size/i);
+  assert.deepEqual(manager.tools, []);
 });
 
 test('real CLI dispatches MCP tools and startup failure releases session locks', async t => {
@@ -116,8 +149,8 @@ test('real CLI dispatches MCP tools and startup failure releases session locks',
 
 test('MCP request timeout leaves no registered tools and redacts configured credentials', async t => {
   const f = await fixture(t);
-  process.env.VYEN_MCP_ERROR_TOKEN = 'mcp-error-secret';
-  t.after(() => { delete process.env.VYEN_MCP_ERROR_TOKEN; });
+  process.env.VYEN_MCP_ERROR_HELPER = 'mcp-error-secret';
+  t.after(() => { delete process.env.VYEN_MCP_ERROR_HELPER; });
   const http = createServer(async (request, response) => {
     for await (const _ of request) { /* drain the request */ }
     response.writeHead(401, { 'content-type': 'text/plain' }); response.end('Rejected mcp-error-secret');
@@ -126,7 +159,7 @@ test('MCP request timeout leaves no registered tools and redacts configured cred
   t.after(() => { http.closeAllConnections(); return new Promise(resolve => http.close(resolve)); });
   const registry = new ToolRegistry(f.cwd, async () => true);
   const config = mcpConfigSchema.parse({ servers: { broken: { transport: 'http', url: `http://127.0.0.1:${http.address().port}/mcp`,
-    bearerEnv: 'VYEN_MCP_ERROR_TOKEN', timeoutMs: 200 } } });
+    bearerEnv: 'VYEN_MCP_ERROR_HELPER', timeoutMs: 200 } } });
   const manager = new McpManager(config, f.cwd);
   await assert.rejects(manager.connect(registry), error => !error.message.includes('mcp-error-secret'));
   assert.deepEqual(manager.tools, []);
@@ -237,10 +270,10 @@ REA_MODE = "production"
   const manager = new McpManager(filteredConfig, f.cwd);
   t.after(() => manager.close());
   await manager.connect(registry);
-  assert.deepEqual(manager.tools.map(tl => tl.name).sort(), [
+  assert.deepEqual(manager.tools.map(tl => tl.name), [
     mcpToolName('rea', 'rea_tool_1'),
     mcpToolName('rea', 'rea_tool_3'),
-  ].sort());
+  ]);
   await manager.close();
 });
 
@@ -275,13 +308,13 @@ test('read_mcp_resource requires approval and is absent in read-only mode', asyn
 test('an MCP server error never leaks a resolved credential', async t => {
   const f = await fixture(t);
   const secret = 'sk-live-mcp-secret-value';
-  process.env.VYEN_MCP_SHORT_SECRET = 'abc';
-  t.after(() => { delete process.env.VYEN_MCP_SHORT_SECRET; });
+  process.env.VYEN_MCP_SHORT_HELPER = 'abc';
+  t.after(() => { delete process.env.VYEN_MCP_SHORT_HELPER; });
   const registry = new ToolRegistry(f.cwd, async () => true);
   const manager = new McpManager(stdio({
     env: {
       LEAKED_TOKEN: secret,
-      SHORT_TOKEN: '${VYEN_MCP_SHORT_SECRET}',
+      SHORT_TOKEN: '${VYEN_MCP_SHORT_HELPER}',
       FALLBACK_TOKEN: '${VYEN_MCP_MISSING_VAR:-fallback-secret}',
     },
   }), f.cwd);
@@ -549,6 +582,15 @@ test('mcp project scope commands write and remove only the project config and li
   assert.equal(afterRmJson.servers.proj, undefined);
 });
 
+test('parseEnvBoolean only enables on 1/true/yes and fails closed on 0/false/no', () => {
+  for (const on of ['1', 'true', 'TRUE', 'True', 'yes', 'YES', ' true ']) {
+    assert.equal(parseEnvBoolean(on), true, `expected ${JSON.stringify(on)} to enable`);
+  }
+  for (const off of ['0', 'false', 'False', 'no', 'NO', '', '2', 'on', 'anything', undefined]) {
+    assert.equal(parseEnvBoolean(off), false, `expected ${JSON.stringify(off)} to stay disabled`);
+  }
+});
+
 test('MCP server cannot forward protected provider credentials via envFrom', async t => {
   const f = await fixture(t);
   const config = mcpConfigSchema.parse({
@@ -579,6 +621,34 @@ test('MCP server cannot forward standard provider credentials (OPENAI_API_KEY, G
   });
   const manager = new McpManager(config, f.cwd);
   await assert.rejects(manager.connect(), /cannot forward protected credential variable "openai_api_key"/i);
+});
+
+test('MCP server cannot forward token-suffix credentials via any forwarding field', async t => {
+  const secretNames = ['MYAPP_TOKEN', 'CUSTOM_API_KEY', 'FOO_SECRET', 'APP_PASSWORD', 'TOKEN', 'DB_URL'];
+  for (const secretName of secretNames) {
+    process.env[secretName] = 'e2e-secret-value';
+    const variants = [
+      { stdio: { envVars: [secretName] } },
+      { stdio: { envFrom: { FOO: secretName } } },
+      { stdio: { env: { X: `\${${secretName}:-}` } } },
+      { http: { envHeaders: { Authorization: secretName } } },
+      { http: { bearerEnv: secretName } },
+      { http: { headers: { 'X-Exfil': `\${${secretName}}` } } },
+    ];
+    for (const variant of variants) {
+      const f = await fixture(t);
+      const config = mcpConfigSchema.parse({
+        servers: {
+          evil: variant.stdio
+            ? { transport: 'stdio', command: process.execPath, args: ['server.mjs'], ...variant.stdio }
+            : { transport: 'http', url: 'https://mcp.local:8443/mcp', ...variant.http },
+        },
+      });
+      const manager = new McpManager(config, f.cwd);
+      await assert.rejects(manager.connect(), new RegExp(`cannot forward protected credential variable "${secretName}"`, 'i'), `${secretName} via ${JSON.stringify(variant)}`);
+    }
+    delete process.env[secretName];
+  }
 });
 
 test('MCP HTTP server cannot forward protected provider credentials via headers placeholders', async t => {
@@ -701,4 +771,146 @@ test('sanitizeAndCompactToolSchema sanitizes non-standard schemas and applies 4-
   assert.deepEqual(flat.properties.p2, { type: 'number' });
   assert.deepEqual(flat.properties.p3, { type: 'boolean' });
   assert.deepEqual(flat.properties.p4, {});
+});
+
+test('resolveMcpCommand does not search cwd for bare command names on Windows', async t => {
+  const f = await fixture(t);
+  const maliciousNpx = join(f.cwd, 'npx.cmd');
+  await writeFile(maliciousNpx, '@echo malicious');
+  const env = { PATH: 'C:\\NonExistentSystemDir' };
+  const resolved = resolveMcpCommand('npx', env, f.cwd);
+  assert.notEqual(resolved.toLowerCase(), maliciousNpx.toLowerCase(), 'resolveMcpCommand must not resolve bare command to cwd/npx.cmd');
+});
+
+test('parseCodexMcpServers ignores prototype pollution keys', () => {
+  const evilToml = `
+[mcp_servers.__proto__]
+command = "evil"
+
+[mcp_servers.test]
+command = "node"
+__proto__ = "polluted"
+constructor = "polluted"
+prototype = "polluted"
+`;
+  const parsed = parseCodexMcpServers(evilToml);
+  assert.equal(Object.prototype.command, undefined, 'Object.prototype must not be polluted');
+  assert.ok(!Object.prototype.hasOwnProperty.call(parsed, '__proto__'));
+  assert.ok(parsed.test);
+  assert.equal(parsed.test.command, 'node');
+});
+
+test('closeConnection kills process tree on Windows', async t => {
+  const f = await fixture(t);
+  const pidFile = join(f.cwd, 'server.pid');
+  const childPidFile = join(f.cwd, 'child.pid');
+  const config = mcpConfigSchema.parse({
+    servers: {
+      local: {
+        transport: 'stdio',
+        command: process.execPath,
+        args: [fileURLToPath(new URL('./fixtures/mcp-server.mjs', import.meta.url)), '--stdio',
+          '--write-pid', pidFile, '--spawn-child', childPidFile],
+      },
+    },
+  });
+  const registry = new ToolRegistry(f.cwd);
+  const manager = new McpManager(config, f.cwd);
+  t.after(() => manager.close());
+  await manager.connect(registry);
+  const readPid = async file => {
+    for (let i = 0; i < 200; i++) {
+      try { return Number(await readFile(file, 'utf8')); }
+      catch { await new Promise(resolve => setTimeout(resolve, 10)); }
+    }
+    throw new Error(`MCP child did not write ${file}`);
+  };
+  const serverPid = await readPid(pidFile);
+  const childPid = await readPid(childPidFile);
+  t.after(() => {
+    for (const pid of [serverPid, childPid]) {
+      try { process.kill(pid, 'SIGKILL'); } catch {}
+    }
+  });
+  await manager.close();
+  const dead = async pid => {
+    for (let i = 0; i < 200; i++) {
+      try { process.kill(pid, 0); } catch { return; }
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    throw new Error(`MCP process ${pid} still alive after close()`);
+  };
+  await dead(serverPid);
+  if (process.platform === 'win32') await dead(childPid);
+});
+
+test('McpManager records SDK errors as bounded diagnostics instead of swallowing them', async t => {
+  const f = await fixture(t);
+  const registry = new ToolRegistry(f.cwd);
+  const manager = new McpManager(stdio({ readOnlyTools: ['echo'] }), f.cwd);
+  t.after(() => manager.close());
+  await manager.connect(registry);
+  const client = manager.connections[0].client;
+  client.onerror(new Error('boom'));
+  assert.equal(manager.diagnostics.length, 1);
+  assert.match(manager.diagnostics[0], /boom/);
+  client.onerror(new Error('x'.repeat(5000)));
+  assert.match(manager.diagnostics.at(-1), /truncated \d+ chars/);
+  assert.ok(manager.diagnostics.at(-1).length <= 2100, 'diagnostic is truncated like other errors');
+});
+
+test('openServer rejects cwd escaping workspace root', async t => {
+  const f = await fixture(t);
+  const config = mcpConfigSchema.parse({
+    servers: {
+      traversal: {
+        transport: 'stdio',
+        command: 'node',
+        args: ['-e', 'console.log("hi")'],
+        cwd: '../../outside',
+      },
+    },
+  });
+  const manager = new McpManager(config, f.cwd);
+  t.after(() => manager.close());
+  await assert.rejects(
+    manager.connect(new ToolRegistry(f.cwd, async () => true)),
+    /escapes the workspace root/i,
+  );
+});
+
+
+test('MCP HTTP client rejects connections to private and loopback IP addresses', async t => {
+  const f = await fixture(t);
+  const metadataConfig = mcpConfigSchema.parse({
+    servers: {
+      metadata: {
+        transport: 'http',
+        url: 'http://169.254.169.254/mcp',
+      },
+    },
+  });
+  const metadataManager = new McpManager(metadataConfig, f.cwd);
+  t.after(() => metadataManager.close());
+  await assert.rejects(
+    metadataManager.connect(new ToolRegistry(f.cwd, async () => true)),
+    /SSRF blocked/i,
+    'MCP HTTP client must reject connection to cloud metadata IP',
+  );
+
+  const loopbackConfig = mcpConfigSchema.parse({
+    servers: {
+      loopback: {
+        transport: 'http',
+        url: 'http://127.0.0.1:12345/mcp',
+      },
+    },
+  });
+  const loopbackManager = new McpManager(loopbackConfig, f.cwd);
+  t.after(() => loopbackManager.close());
+  await assert.rejects(
+    loopbackManager.connect(new ToolRegistry(f.cwd, async () => true)),
+    /SSRF blocked/i,
+    'MCP HTTP client must reject connection to loopback IP by default',
+  );
 });

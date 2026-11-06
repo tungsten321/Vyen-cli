@@ -58,7 +58,7 @@ and pipes are not expanded. Stdio starts in the selected workspace.
       "transport": "stdio",
       "command": "node",
       "args": ["/absolute/path/to/server.mjs"],
-      "envFrom": { "SERVICE_API_KEY": "MY_SERVICE_KEY" },
+      "envFrom": { "SERVICE_REF": "MY_SERVICE_REF" },
       "readOnlyTools": [],
       "timeoutMs": 30000,
       "disabled": true
@@ -66,7 +66,7 @@ and pipes are not expanded. Stdio starts in the selected workspace.
     "remote": {
       "transport": "http",
       "url": "https://YOUR_MCP_HOST/mcp",
-      "bearerEnv": "MY_MCP_TOKEN",
+      "bearerEnv": "MY_MCP_REF",
       "readOnlyTools": [],
       "timeoutMs": 30000,
       "disabled": true
@@ -82,6 +82,43 @@ PREFIX/TMPDIR if a particular server needs them. A missing referenced variable
 fails startup. An HTTP server without authentication can omit bearerEnv. No
 account login or OAuth flow is performed; configure a token usable by the server.
 HTTP redirects carrying credentials are rejected.
+
+Forwarding is guarded: `env`, `envVars`, `envFrom`, `envHeaders`, `bearerEnv`
+and `${VAR}` placeholders refuse variable names that look like credentials —
+provider keys, bare `TOKEN`/`PASSWORD`/`SECRET`/`APIKEY`/`KEY`, any `*_TOKEN`,
+`*_KEY`, `*_SECRET`, `*_PASSWORD`, `*_PASS`, `*_CREDENTIAL`, `*_AUTH` suffix,
+and database URL names (`DATABASE_URL`, `DB_URL`, …). Name your bearer/secret
+source variable without those suffixes (for example `MY_MCP_REF`); a name with
+a sensitive suffix is rejected even if the value itself is not a provider key.
+
+## HTTP transport security
+
+HTTP MCP servers are fetched through a pinned client: hosts are resolved once,
+loopback/private/link-local/metadata addresses are rejected, and the checked
+addresses are pinned for every connection so a DNS rebinding between hops cannot
+win. Redirects are not followed: a 3xx response is surfaced to the SDK as an
+error, and credentials are never forwarded to a different origin.
+
+Loopback can be allowed in two ways, both default-off:
+
+- per-server `allowLoopback: true` in `mcp.json` (HTTP servers only), or
+- globally `VYEN_ALLOW_MCP_LOOPBACK=1` (also `true`/`yes`, case-insensitive).
+
+`0`, `false`, `no` and empty values do **not** enable loopback — the variable
+fails closed. It applies to MCP HTTP transport only; `web_fetch` has no
+equivalent environment override (its own test-only flag is separate).
+
+Response bodies are bounded by the server's `maxBufferSize` (default 32 MiB,
+minimum 64 KiB, maximum 128 MiB). A body larger than `maxBufferSize` aborts
+the request with an error instead of being buffered unbounded.
+
+Note: MCP HTTP responses are fully buffered until the server closes the
+response, rather than streamed chunk-by-chunk to the SDK. SSE responses
+therefore only arrive once the stream ends, and the `maxBufferSize` cap
+counts the whole stream; combined with the request `timeoutMs`, this means
+very long-lived per-request streams are bounded by both. Servers that need
+incremental delivery should keep responses short instead of holding a stream
+open.
 
 `vyen mcp list` lists names, transport and read-only allowlists without connecting.
 `vyen mcp check` starts/connects enabled servers, enumerates tools (including
@@ -117,10 +154,8 @@ stdio shutdown uses the SDK's child-process cleanup. Server stderr is discarded
 to keep terminal/NDJSON output clean. Inspect server logs separately for debugging.
 
 Limits: 64 servers, 1024 tools default / 2048 hard cap, 32 continuation pages, 16k characters per
-input schema, 32 MiB stdio message buffer, 100–600000 ms configurable request
+input schema, 32 MiB stdio and HTTP message buffer (`maxBufferSize`, min 64 KiB, max 128 MiB), 100–600000 ms configurable request
 timeout (default 30000). Startup fails on duplicates or invalid/excessive schemas
 rather than silently dropping tools. In interactive TUI sessions, `/mcp` reloads
 server connections in place; MCP resources (`list_mcp_resources`,
-`list_mcp_resource_templates`, `read_mcp_resource`) are also supported. Prompt
-templates, sampling, elicitation, OAuth, legacy SSE and experimental MCP tasks
-are not implemented.
+`list_mcp_resource_templates`, `read_mcp_resource`) are also supported. Sampling and elicitation are supported via client handlers (interactive prompt for elicitation). Prompt templates, OAuth, legacy SSE and experimental MCP tasks are not implemented.

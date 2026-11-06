@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 import { MAX_API_RETRIES } from '../dist/harness.js';
-import { configSchema, DEFAULT_GATEWAY_URL } from '../dist/config.js';
+import { configSchema } from '../dist/config.js';
 
 test('SPEC matches the implemented retry, budget and MCP-resource contract, and README states the real release and gateway facts', async () => {
   const [spec, readme, agents, validation, roadmap, critique, workflow, mcp] = await Promise.all([
@@ -18,9 +18,8 @@ test('SPEC matches the implemented retry, budget and MCP-resource contract, and 
 
   assert.equal(MAX_API_RETRIES, 3);
   assert.equal(configSchema.parse({}).runTokenBudget, 0);
-  assert.equal(DEFAULT_GATEWAY_URL, 'https://api.yuristore.xyz/v1');
-  assert.match(spec, /api\.yuristore\.xyz/);
-  assert.match(readme, /api\.yuristore\.xyz/);
+  assert.doesNotMatch(spec, /yuristore/i);
+  assert.doesNotMatch(readme, /yuristore/i);
   assert.match(mcp, /registry\.register\('list_mcp_resources'/);
   assert.match(mcp, /registry\.register\('read_mcp_resource'/);
   assert.match(spec, /Three retries/);
@@ -53,16 +52,15 @@ test('SPEC matches the implemented retry, budget and MCP-resource contract, and 
   assert.doesNotMatch(spec, /## Automated GitHub releases/);
   assert.match(validationText, /For the 0\.2\.2 upstream record/);
   assert.doesNotMatch(validationText, /No Android\/Termux device, ARM64, macOS or Windows was available/);
-  assert.match(spec, /third-party destination/);
-  assert.match(spec, /one-time warning/);
-  assert.match(spec, /setup wizard/);
+  assert.match(spec, /baseUrl is required|explicit baseUrl/i);
+  assert.doesNotMatch(spec, /third-party destination|one-time warning/);
+  assert.match(spec, /vyen setup/);
   assert.match(spec, /effectiveBaseUrl/);
-  assert.match(readme, /cảnh báo một lần/);
   assert.match(readme, /effectiveBaseUrl/);
-  assert.match(readme, /wizard setup/);
-  assert.match(roadmap, /R0\.9 is resolved/);
+  assert.match(readme, /vyen setup/);
+  assert.match(roadmap, /R0\.9 was resolved/);
   assert.doesNotMatch(roadmap, /R0\.9 is still an open/);
-  assert.match(roadmap, /DEFAULT_GATEWAY_URL/);
+  assert.doesNotMatch(roadmap, /DEFAULT_GATEWAY_URL/);
   assert.match(critique, /R0\.9 resolved/);
   assert.match(validationText, /R0\.9 is covered/);
   assert.match(readme, /\[.*ROADMAP\.md.*\]/);
@@ -184,4 +182,68 @@ test('SPEC documents that allowed-tools does not override persistent deny rules'
   );
 });
 
+test('no default gateway remains in code or docs', async () => {
+  const [configTs, setupTs, cliTs, helpTs, spec, readme] = await Promise.all([
+    readFile('src/config.ts', 'utf8'),
+    readFile('src/setup.ts', 'utf8'),
+    readFile('src/cli.ts', 'utf8'),
+    readFile('src/help.ts', 'utf8'),
+    readFile('docs/SPEC.md', 'utf8'),
+    readFile('README.md', 'utf8'),
+  ]);
+  for (const [name, text] of [['config.ts', configTs], ['setup.ts', setupTs], ['cli.ts', cliTs], ['help.ts', helpTs], ['SPEC.md', spec], ['README.md', readme]]) {
+    assert.doesNotMatch(text, /yuristore/i, name + ' must not mention yuristore');
+    assert.doesNotMatch(text, /DEFAULT_GATEWAY_URL|defaultGatewayWarning/i, name + ' must not reference default gateway');
+  }
+  assert.match(configTs, /baseUrl is required|Missing baseUrl/i, 'resolveRuntime must require explicit baseUrl');
+  assert.match(setupTs, /api\.openai\.com\/v1|api\.anthropic\.com/i, 'presets must use official endpoints');
+  assert.match(cliTs, /effectiveBaseUrl: targetUrl/, 'doctor must not probe a default gateway');
+  assert.match(configTs, /localhost:8000/, 'localhost /v1 normalization must remain');
+});
 
+
+
+test('MCP doc correctly reflects sampling and elicitation capabilities', async () => {
+  const mcp = await readFile('docs/MCP.md', 'utf8');
+  assert.match(mcp, /Sampling and elicitation are supported via client handlers/i);
+});
+
+test('docs contract covers MCP HTTP loopback override and response cap', async () => {
+  const [mcp, spec] = await Promise.all([readFile('docs/MCP.md', 'utf8'), readFile('docs/SPEC.md', 'utf8')]);
+  assert.match(mcp, /allowLoopback/, 'docs/MCP.md must document per-server allowLoopback');
+  assert.match(mcp, /VYEN_ALLOW_MCP_LOOPBACK/, 'docs/MCP.md must document the loopback env override');
+  assert.match(mcp, /1.*true.*yes|true.*yes.*1/i, 'docs/MCP.md must document the accepted truthy values');
+  assert.match(mcp, /maxBufferSize/, 'docs/MCP.md must document the HTTP response body cap');
+  assert.match(spec, /allowLoopback/, 'docs/SPEC.md must document allowLoopback');
+  assert.match(spec, /VYEN_ALLOW_MCP_LOOPBACK/, 'docs/SPEC.md must document the loopback env override');
+  assert.match(spec, /override applies to MCP HTTP only, never to/, 'docs/SPEC.md must scope the override to MCP HTTP only');
+  assert.match(spec, /maxBufferSize/, 'docs/SPEC.md must document the HTTP response body cap');
+});
+
+test('canonical repository tungsten321 is consistent across package.json, README, and docs', async () => {
+  const [pkg, readme, landing] = await Promise.all([
+    readFile('package.json', 'utf8').then(JSON.parse),
+    readFile('README.md', 'utf8'),
+    readFile('docs/index.html', 'utf8'),
+  ]);
+
+  assert.equal(pkg.repository?.url, 'https://github.com/tungsten321/Vyen-cli');
+  assert.match(readme, /https:\/\/github\.com\/tungsten321\/Vyen-cli/);
+  assert.match(landing, /tungsten321\/Vyen-cli/);
+  assert.doesNotMatch(landing, /syxgamer122\/Vyen-cli/);
+});
+
+test('CHANGELOG first version heading matches package version or is marked Unreleased', async () => {
+  const [pkg, changelog] = await Promise.all([
+    readFile('package.json', 'utf8').then(JSON.parse),
+    readFile('CHANGELOG.md', 'utf8'),
+  ]);
+
+  const match = changelog.match(/^##\s+([^\r\n]+)/m);
+  assert.ok(match, 'CHANGELOG must have at least one version heading');
+  const heading = match[1];
+  assert.ok(
+    heading.startsWith(pkg.version) || heading.toLowerCase().includes('unreleased'),
+    `First CHANGELOG heading "${heading}" must match package version "${pkg.version}" or be marked Unreleased`,
+  );
+});
