@@ -4,7 +4,7 @@ import http from 'node:http';
 import {
   isPrivateIp,
   isLoopbackIp,
-  resolveSafeIp,
+  resolveSafeAddresses,
   webFetch,
   webSearch,
   parseDuckDuckGoLiteHtml,
@@ -43,6 +43,7 @@ test('web_fetch refuses requests to private and metadata IP addresses (SSRF)', a
   assert.equal(isPrivateIp('::ffff:7f00:1'), true, 'IPv4-mapped hex loopback');
   assert.equal(isPrivateIp('::ffff:a9fe:a9fe'), true, 'IPv4-mapped hex cloud metadata');
   assert.equal(isPrivateIp('::ffff:10.0.0.1'), true, 'IPv4-mapped decimal private');
+  assert.equal(isLoopbackIp('::7f00:1'), true, 'IPv4-compatible hex loopback');
 
   // Public IPs
   assert.equal(isPrivateIp('8.8.8.8'), false, 'Google DNS public');
@@ -127,17 +128,16 @@ test('web_fetch re-checks IP safety and policy after every redirect', async () =
 });
 
 test('web_fetch pins resolved IP address to prevent DNS rebinding', async () => {
-  // Test resolveSafeIp
   await assert.rejects(
-    resolveSafeIp('localhost'),
+    resolveSafeAddresses('localhost'),
     /private|loopback/i,
-    'resolveSafeIp must reject hostname resolving to loopback',
+    'resolveSafeAddresses must reject hostname resolving to loopback',
   );
 
   // A public IP literal needs no DNS, so this assertion is deterministic offline.
-  const safeIp = await resolveSafeIp('8.8.8.8');
-  assert.equal(safeIp, '8.8.8.8');
-  assert.equal(isPrivateIp(safeIp), false, 'Resolved IP must be public');
+  const addresses = await resolveSafeAddresses('8.8.8.8');
+  assert.equal(addresses.length, 1);
+  assert.equal(addresses[0].address, '8.8.8.8');
 });
 
 test('web_search queries DuckDuckGo Lite and falls back to TinyFish/Parallel keyless', async () => {
@@ -176,11 +176,7 @@ test('web_search queries DuckDuckGo Lite and falls back to TinyFish/Parallel key
 });
 
 test('web_fetch and web_search enforce size limits and respect domain policy', async () => {
-  // 1. Test size limit enforcement
-  assert.equal(MAX_RESPONSE_BYTES, 5 * 1024 * 1024, 'MAX_RESPONSE_BYTES must be 5MB');
-  assert.equal(MAX_REDIRECTS, 5, 'MAX_REDIRECTS must be 5');
-
-  // 2. Domain policy rejection
+  // Domain policy rejection
   await assert.rejects(
     webFetch({
       url: 'https://evil.internal/data',
@@ -559,4 +555,71 @@ test('ToolRegistry allows web_search when user approves ask policy decision', as
 test('convertHtmlToMarkdown handles unclosed li tags cleanly', () => {
   const unclosedList = '<ul><li>First<li>Second</ul>';
   assert.equal(convertHtmlToMarkdown(unclosedList), '- First\n- Second');
+});
+test('isPrivateIp recognizes IPv6 link-local addresses with zone identifiers as private', () => {
+  assert.equal(isPrivateIp('fe80::1%eth0'), true, 'IPv6 link-local with zone ID must be private');
+  assert.equal(isPrivateIp('[fe80::1%eth0]'), true, 'Bracketed IPv6 link-local with zone ID must be private');
+  assert.equal(isPrivateIp('fe80::2%1'), true, 'Numeric zone ID must be private');
+  assert.equal(isPrivateIp('0177.0.0.1'), true, 'Octal IPv4 loopback must be private');
+  assert.equal(isPrivateIp('2130706433'), true, 'Decimal dword IPv4 loopback must be private');
+  assert.equal(isPrivateIp('0x7f000001'), true, 'Hex IPv4 loopback must be private');
+});
+
+test('web_search maps TinyFish MCP results through the shared caller', async () => {
+  const originalFetch = globalThis.fetch;
+  let seenMethod; let seenHeaders; let seenBody;
+  globalThis.fetch = async (url, init) => {
+    if (String(url).includes('tinyfish')) {
+      seenMethod = init.method; seenHeaders = init.headers; seenBody = JSON.parse(init.body);
+      return new Response(JSON.stringify({
+        result: { content: [{ text: JSON.stringify({ results: [{ site_name: 'Fish Site', url: 'https://fish.example', snippet: 'fish snippet', date: '2026-01-02' }] }) }] },
+      }), { status: 200, headers: { 'content-type': 'application/json' } });
+    }
+    return new Response('nope', { status: 500 });
+  };
+  try {
+    const result = await webSearch({ query: 'fish', mockEngines: { ddg: async () => { throw new Error('429'); } } });
+    assert.equal(seenMethod, 'POST');
+    assert.equal(seenHeaders['X-TinyFish-Access-Mode'], 'keyless');
+    assert.equal(seenBody.params.name, 'search');
+    assert.deepEqual(seenBody.params.arguments, { query: 'fish' });
+    assert.equal(result.provider, 'tinyfish');
+    assert.equal(result.results[0].title, 'Fish Site');
+    assert.equal(result.results[0].snippet, 'fish snippet');
+    assert.equal(result.results[0].date, '2026-01-02');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('web_search maps Parallel MCP results through the shared caller', async () => {
+  const originalFetch = globalThis.fetch;
+  let seenMethod; let seenHeaders; let seenBody;
+  globalThis.fetch = async (url, init) => {
+    if (String(url).includes('search.parallel.ai')) {
+      seenMethod = init.method; seenHeaders = init.headers; seenBody = JSON.parse(init.body);
+      return new Response(JSON.stringify({
+        result: { content: [{ text: JSON.stringify({ results: [{ title: 'Par Title', url: 'https://par.example', excerpts: ['ex1', 'ex2'] }] }) }] },
+      }), { status: 200, headers: { 'content-type': 'application/json' } });
+    }
+    return new Response('nope', { status: 500 });
+  };
+  try {
+    const result = await webSearch({
+      query: 'par',
+      mockEngines: {
+        ddg: async () => { throw new Error('429'); },
+        tinyfish: async () => { throw new Error('503'); },
+      },
+    });
+    assert.equal(seenMethod, 'POST');
+    assert.equal(seenHeaders['X-TinyFish-Access-Mode'], undefined);
+    assert.equal(seenBody.params.name, 'web_search');
+    assert.deepEqual(seenBody.params.arguments, { objective: 'par', search_queries: ['par'] });
+    assert.equal(result.provider, 'parallel');
+    assert.equal(result.results[0].title, 'Par Title');
+    assert.equal(result.results[0].snippet, 'ex1\n\nex2');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

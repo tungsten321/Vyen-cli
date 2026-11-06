@@ -6,7 +6,7 @@ import type { PolicyDecision } from './policy.js';
 
 export const MAX_RESPONSE_BYTES = 5 * 1024 * 1024; // 5MB
 export const MAX_REDIRECTS = 5;
-export const DEFAULT_TIMEOUT_MS = 30_000;
+const DEFAULT_TIMEOUT_MS = 30_000;
 
 export interface WebFetchOptions {
   url: string;
@@ -52,7 +52,6 @@ export interface WebSearchResult {
 
 export interface WebSearchOptions {
   query: string;
-  limit?: number;
   approved?: boolean;
   approve?: (request: { tool: string; input: unknown; signal: AbortSignal }) => Promise<boolean>;
   policy?: { evaluate?: (tool: string, resource: string) => PolicyDecision };
@@ -67,18 +66,44 @@ export interface WebSearchOptions {
 /**
  * Normalizes an IP address, converting uncompressed IPv6 representations to canonical RFC 5952 form.
  * Uses new URL('http://[<ip>]') as a standard-compliant, zero-dependency parser for IPv6 canonicalization.
+ * The URL form also canonicalizes octal/decimal/hex IPv4 (0177.0.0.1, 2130706433, 0x7f000001)
+ * and drops zone IDs / trailing dots, closing SSRF obfuscation bypasses.
  */
-export function normalizeIp(ip: string): string {
+function normalizeIp(ip: string): string {
   const clean = ip.trim().replace(/^\[|\]$/g, '').trim().toLowerCase();
-  if (net.isIPv6(clean)) {
+  const withoutZone = clean.split('%')[0].replace(/\.$/, '');
+  if (net.isIPv6(withoutZone)) {
     try {
-      const canonical = new URL(`http://[${clean}]`).hostname;
+      const canonical = new URL(`http://[${withoutZone}]`).hostname;
       return canonical.replace(/^\[|\]$/g, '');
     } catch {
-      return clean;
+      return withoutZone;
     }
   }
-  return clean;
+  try {
+    const canonical = new URL(`http://${withoutZone}`).hostname.replace(/^\[|\]$/g, '').replace(/\.$/, '');
+    if (net.isIP(canonical)) return canonical;
+  } catch {
+    // ignore
+  }
+  return withoutZone;
+}
+
+/**
+ * Returns the embedded dotted-quad IPv4 from IPv4-mapped / IPv4-compatible
+ * forms (dotted or hex), or null when no embedded IPv4 is present.
+ */
+function embeddedIpv4(rest: string): string | null {
+  if (net.isIPv4(rest)) return rest;
+  const groups = rest.split(':');
+  if (groups.length >= 2 && /^[0-9a-f]+$/i.test(groups[groups.length - 2]) && /^[0-9a-f]+$/i.test(groups[groups.length - 1])) {
+    const g1 = parseInt(groups[groups.length - 2], 16);
+    const g2 = parseInt(groups[groups.length - 1], 16);
+    if (!Number.isNaN(g1) && !Number.isNaN(g2)) {
+      return `${(g1 >> 8) & 0xff}.${g1 & 0xff}.${(g2 >> 8) & 0xff}.${g2 & 0xff}`;
+    }
+  }
+  return null;
 }
 
 /**
@@ -90,20 +115,9 @@ export function isPrivateIp(ip: string): boolean {
 
   // IPv4-mapped IPv6 (::ffff:127.0.0.1, ::ffff:7f00:1, 0:0:0:0:0:ffff:...)
   if (clean.startsWith('::ffff:') || clean.startsWith('0:0:0:0:0:ffff:')) {
-    const colonParts = clean.split(':');
-    const last = colonParts[colonParts.length - 1];
-    if (net.isIPv4(last)) {
-      return isPrivateIp(last);
-    }
-    // Hex IPv4-mapped notation (e.g. ::ffff:7f00:1 or ::ffff:a9fe:a9fe)
-    if (colonParts.length >= 2) {
-      const g1 = parseInt(colonParts[colonParts.length - 2], 16);
-      const g2 = parseInt(colonParts[colonParts.length - 1], 16);
-      if (!Number.isNaN(g1) && !Number.isNaN(g2)) {
-        const v4 = `${(g1 >> 8) & 0xff}.${g1 & 0xff}.${(g2 >> 8) & 0xff}.${g2 & 0xff}`;
-        return isPrivateIp(v4);
-      }
-    }
+    const rest = clean.replace(/^::ffff:|^0:0:0:0:0:ffff:/, '');
+    const v4 = embeddedIpv4(rest);
+    if (v4) return isPrivateIp(v4);
     // Any unrecognized mapped address fails closed as private
     return true;
   }
@@ -163,15 +177,8 @@ export function isPrivateIp(ip: string): boolean {
   // Deprecated IPv4-compatible form (::127.0.0.1 or ::7f00:1)
   if (normalized.startsWith('::')) {
     const rest = normalized.slice(2);
-    if (net.isIPv4(rest)) return isPrivateIp(rest);
-    const groups = rest.split(':');
-    if (groups.length === 2) {
-      const g1 = parseInt(groups[0], 16);
-      const g2 = parseInt(groups[1], 16);
-      if (!Number.isNaN(g1) && !Number.isNaN(g2)) {
-        return isPrivateIp(`${(g1 >> 8) & 0xff}.${g1 & 0xff}.${(g2 >> 8) & 0xff}.${g2 & 0xff}`);
-      }
-    }
+    const v4 = embeddedIpv4(rest);
+    if (v4) return isPrivateIp(v4);
   }
 
   return false;
@@ -183,14 +190,14 @@ export function isPrivateIp(ip: string): boolean {
 export function isLoopbackIp(ip: string): boolean {
   const clean = normalizeIp(ip);
   if (clean === '::1' || clean === '0:0:0:0:0:0:0:1') return true;
-  if (clean.startsWith('::ffff:')) {
-    const v4 = clean.slice(7);
-    if (net.isIPv4(v4) && v4.startsWith('127.')) return true;
-    const parts = clean.split(':');
-    if (parts.length >= 2) {
-      const g1 = parseInt(parts[parts.length - 2], 16);
-      if (((g1 >> 8) & 0xff) === 127) return true;
-    }
+  if (clean.startsWith('::ffff:') || clean.startsWith('0:0:0:0:0:ffff:')) {
+    const rest = clean.replace(/^::ffff:|^0:0:0:0:0:ffff:/, '');
+    const v4 = embeddedIpv4(rest);
+    if (v4 && v4.startsWith('127.')) return true;
+  }
+  if (clean.startsWith('::')) {
+    const v4 = embeddedIpv4(clean.slice(2));
+    if (v4 && v4.startsWith('127.')) return true;
   }
   if (net.isIPv4(clean) && clean.startsWith('127.')) return true;
   return false;
@@ -239,17 +246,6 @@ export async function resolveSafeAddresses(
   }
 
   return results.map(record => ({ address: record.address, family: record.family }));
-}
-
-/**
- * Resolves a hostname to one safe IP address. Throws if any resolved IP is private/loopback.
- */
-export async function resolveSafeIp(
-  hostname: string,
-  options?: { allowLoopback?: boolean },
-): Promise<string> {
-  const addresses = await resolveSafeAddresses(hostname, options);
-  return addresses[0].address;
 }
 
 /**
@@ -391,14 +387,46 @@ function isTextualContentType(contentType: string): boolean {
 }
 
 /**
+ * Combines a caller signal with a timeout deadline. Returns combined signal
+ * plus the deadline so callers can tell aborts apart from timeouts.
+ */
+function timedSignal(parent: AbortSignal | undefined, timeoutMs: number): { signal: AbortSignal; deadline: AbortSignal } {
+  const deadline = AbortSignal.timeout(timeoutMs);
+  const signal = parent ? AbortSignal.any([parent, deadline]) : deadline;
+  return { signal, deadline };
+}
+
+/**
+ * Enforces one policy decision, fail-closed. `preApproved` means an `ask`
+ * decision is already satisfied (first fetch hop / registry-approved search).
+ */
+async function enforcePolicy(opts: {
+  policy?: { evaluate?: (tool: string, resource: string) => PolicyDecision };
+  tool: string;
+  resource: string;
+  input: unknown;
+  signal: AbortSignal;
+  approve?: (request: { tool: string; input: unknown; signal: AbortSignal }) => Promise<boolean>;
+  preApproved: boolean;
+  denyMessage: string;
+  askMessage: string;
+}): Promise<void> {
+  const decision = opts.policy?.evaluate?.(opts.tool, opts.resource) ?? 'allow';
+  if (decision === 'deny') throw new Error(opts.denyMessage);
+  if (decision === 'ask' && !opts.preApproved) {
+    const ok = opts.approve ? await opts.approve({ tool: opts.tool, input: opts.input, signal: opts.signal }) : false;
+    if (!ok) throw new Error(opts.askMessage);
+  }
+}
+
+/**
  * Fetches content from a URL with SSRF protection, DNS pinning, and redirect re-evaluation.
  */
 export async function webFetch(options: WebFetchOptions): Promise<WebFetchResult> {
   const format = options.format ?? 'markdown';
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxRedirects = options.maxRedirects ?? MAX_REDIRECTS;
-  const deadline = AbortSignal.timeout(timeoutMs);
-  const signal = options.signal ? AbortSignal.any([options.signal, deadline]) : deadline;
+  const { signal, deadline } = timedSignal(options.signal, timeoutMs);
 
   let currentUrl = options.url;
   let redirects = 0;
@@ -414,20 +442,17 @@ export async function webFetch(options: WebFetchOptions): Promise<WebFetchResult
 
       // Policy check. The first hop was already evaluated (and approved) by the tool
       // registry; redirects are re-evaluated here and fail closed when approval is needed.
-      if (options.policy?.evaluate) {
-        const decision = options.policy.evaluate('web_fetch', currentUrl);
-        if (decision === 'deny') {
-          throw new Error(`Access to ${currentUrl} is denied by policy.`);
-        }
-        if (decision === 'ask' && redirects > 0) {
-          const approved = options.approve
-            ? await options.approve({ tool: 'web_fetch', input: { url: currentUrl }, signal })
-            : false;
-          if (!approved) {
-            throw new Error(`Access to ${currentUrl} requires approval and was not approved.`);
-          }
-        }
-      }
+      await enforcePolicy({
+        policy: options.policy,
+        tool: 'web_fetch',
+        resource: currentUrl,
+        input: { url: currentUrl },
+        signal,
+        approve: options.approve,
+        preApproved: redirects === 0,
+        denyMessage: `Access to ${currentUrl} is denied by policy.`,
+        askMessage: `Access to ${currentUrl} requires approval and was not approved.`,
+      });
 
       // SSRF & DNS Pinning: validate every resolved record and pin the whole safe set.
       const safeAddresses = await resolveSafeAddresses(parsed.hostname, {
@@ -557,6 +582,42 @@ export async function webFetch(options: WebFetchOptions): Promise<WebFetchResult
 }
 
 /**
+ * Calls one keyless MCP search endpoint (JSON-RPC tools/call) and maps its
+ * results. Shared by the TinyFish and Parallel fallback engines.
+ */
+async function mcpSearch(
+  endpoint: string,
+  extraHeaders: Record<string, string>,
+  toolName: string,
+  args: Record<string, unknown>,
+  signal: AbortSignal,
+  mapItem: (item: Record<string, unknown>) => WebSearchResultItem,
+  label: string,
+): Promise<WebSearchResultItem[]> {
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (compatible; Vyen/0.6.0)',
+      ...extraHeaders,
+    },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: { name: toolName, arguments: args },
+    }),
+    signal,
+  });
+  if (!res.ok) throw new Error(`${label} HTTP ${res.status}`);
+  const json = (await res.json()) as Record<string, unknown>;
+  const content = (json?.result as Record<string, unknown>)?.content as Array<{ text?: string }> | undefined;
+  const textContent = content?.[0]?.text;
+  const parsed = textContent ? (JSON.parse(textContent) as { results?: Array<Record<string, unknown>> }) : null;
+  return (parsed?.results ?? []).map(mapItem);
+}
+
+/**
  * Searches the web using DuckDuckGo Lite, falling back to TinyFish and Parallel keyless MCP endpoints.
  */
 export async function webSearch(options: WebSearchOptions): Promise<WebSearchResult> {
@@ -564,22 +625,19 @@ export async function webSearch(options: WebSearchOptions): Promise<WebSearchRes
   if (!query) throw new Error('Search query cannot be empty.');
 
   // Policy check
-  if (options.policy?.evaluate) {
-    const decision = options.policy.evaluate('web_search', query);
-    if (decision === 'deny') {
-      throw new Error(`Web search for "${query}" is denied by policy.`);
-    }
-    if (decision === 'ask' && !options.approved) {
-      if (!options.approve || !(await options.approve({ tool: 'web_search', input: { query }, signal: options.signal ?? new AbortController().signal }))) {
-        throw new Error(`Web search for "${query}" requires approval by policy.`);
-      }
-    }
-  }
+  await enforcePolicy({
+    policy: options.policy,
+    tool: 'web_search',
+    resource: query,
+    input: { query },
+    signal: options.signal ?? new AbortController().signal,
+    approve: options.approve,
+    preApproved: !!options.approved,
+    denyMessage: `Web search for "${query}" is denied by policy.`,
+    askMessage: `Web search for "${query}" requires approval by policy.`,
+  });
 
-  const createEngineSignal = (timeoutMs = 10_000): AbortSignal => {
-    const timeoutSig = AbortSignal.timeout(timeoutMs);
-    return options.signal ? AbortSignal.any([options.signal, timeoutSig]) : timeoutSig;
-  };
+  const createEngineSignal = (timeoutMs = 10_000): AbortSignal => timedSignal(options.signal, timeoutMs).signal;
 
   // Engine 1: DuckDuckGo Lite
   try {
@@ -608,7 +666,7 @@ export async function webSearch(options: WebSearchOptions): Promise<WebSearchRes
       return {
         query,
         provider: 'duckduckgo',
-        results: options.limit ? results.slice(0, options.limit) : results,
+        results: results,
       };
     }
   } catch {
@@ -621,43 +679,19 @@ export async function webSearch(options: WebSearchOptions): Promise<WebSearchRes
     if (options.mockEngines?.tinyfish) {
       results = await options.mockEngines.tinyfish(query);
     } else {
-      const res = await fetch('https://agent.tinyfish.ai/mcp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-TinyFish-Access-Mode': 'keyless',
-          'User-Agent': 'Mozilla/5.0 (compatible; Vyen/0.6.0)',
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'tools/call',
-          params: {
-            name: 'search',
-            arguments: { query },
-          },
-        }),
-        signal: createEngineSignal(10_000),
-      });
-
-      if (!res.ok) throw new Error(`TinyFish HTTP ${res.status}`);
-      const json = (await res.json()) as Record<string, unknown>;
-      const rawText = (json?.result as Record<string, unknown>)?.content as Array<{ text?: string }> | undefined;
-      const textContent = rawText?.[0]?.text;
-      const parsed = textContent ? (JSON.parse(textContent) as { results?: Array<Record<string, unknown>> }) : null;
-      results = (parsed?.results ?? []).map((item) => ({
+      results = await mcpSearch('https://agent.tinyfish.ai/mcp', { 'X-TinyFish-Access-Mode': 'keyless' }, 'search', { query }, createEngineSignal(10_000), (item) => ({
         title: String(item.title ?? item.site_name ?? item.url ?? ''),
         url: String(item.url ?? ''),
         snippet: String(item.snippet ?? ''),
         date: typeof item.date === 'string' ? item.date : undefined,
-      }));
+      }), 'TinyFish');
     }
 
     if (results.length > 0) {
       return {
         query,
         provider: 'tinyfish',
-        results: options.limit ? results.slice(0, options.limit) : results,
+        results: results,
       };
     }
   } catch {
@@ -670,39 +704,13 @@ export async function webSearch(options: WebSearchOptions): Promise<WebSearchRes
     if (options.mockEngines?.parallel) {
       results = await options.mockEngines.parallel(query);
     } else {
-      const res = await fetch('https://search.parallel.ai/mcp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (compatible; Vyen/0.6.0)',
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'tools/call',
-          params: {
-            name: 'web_search',
-            arguments: {
-              objective: query,
-              search_queries: [query],
-            },
-          },
-        }),
-        signal: createEngineSignal(10_000),
-      });
-
-      if (!res.ok) throw new Error(`Parallel HTTP ${res.status}`);
-      const json = (await res.json()) as Record<string, unknown>;
-      const rawText = (json?.result as Record<string, unknown>)?.content as Array<{ text?: string }> | undefined;
-      const textContent = rawText?.[0]?.text;
-      const parsed = textContent ? (JSON.parse(textContent) as { results?: Array<Record<string, unknown>> }) : null;
-      results = (parsed?.results ?? []).map((item) => ({
+      results = await mcpSearch('https://search.parallel.ai/mcp', {}, 'web_search', { objective: query, search_queries: [query] }, createEngineSignal(10_000), (item) => ({
         title: String(item.title ?? item.url ?? ''),
         url: String(item.url ?? ''),
         snippet: Array.isArray(item.excerpts) && item.excerpts.length > 0
-          ? item.excerpts.join('\n\n')
+          ? (item.excerpts as unknown[]).join('\n\n')
           : String(item.snippet ?? item.description ?? ''),
-      }));
+      }), 'Parallel');
     }
 
     if (results.length === 0) {
@@ -712,7 +720,7 @@ export async function webSearch(options: WebSearchOptions): Promise<WebSearchRes
     return {
       query,
       provider: 'parallel',
-      results: options.limit ? results.slice(0, options.limit) : results,
+      results: results,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
